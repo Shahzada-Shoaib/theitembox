@@ -88,26 +88,23 @@ function drawCrumpledImage(context: CanvasRenderingContext2D, texture: HTMLCanva
   }
 }
 
-export function useCartFlight() {
+export function useCartFlight(reducedMotion: boolean) {
   const activeFlights = useRef(new Set<() => void>());
 
   useEffect(() => {
     const flights = activeFlights.current;
     const clear = () => flights.forEach(cancel => cancel());
-    const motion = matchMedia("(prefers-reduced-motion: reduce)");
     window.addEventListener("resize", clear);
-    motion.addEventListener("change", clear);
     return () => {
       clear();
       window.removeEventListener("resize", clear);
-      motion.removeEventListener("change", clear);
     };
-  }, []);
+  }, [reducedMotion]);
 
   return useCallback((source: HTMLElement | null, destination: HTMLElement | null) => {
     const sourceImage = source?.querySelector("img");
     if (!source || !sourceImage?.complete || !sourceImage.naturalWidth || !destination ||
-      matchMedia("(prefers-reduced-motion: reduce)").matches || !Element.prototype.animate) return;
+      reducedMotion || !Element.prototype.animate) return;
 
     const rect = source.getBoundingClientRect();
     const target = destination.getBoundingClientRect();
@@ -124,7 +121,7 @@ export function useCartFlight() {
     // A manual popover keeps the ghost above the product dialog's top layer.
     if (typeof layer.showPopover === "function") {
       layer.setAttribute("popover", "manual");
-      layer.showPopover();
+      try { layer.showPopover(); } catch { layer.removeAttribute("popover"); }
     }
 
     const start = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
@@ -250,5 +247,5 @@ export function useCartFlight() {
       ], { duration: 650, easing: "ease-out" }));
     }, FLIGHT_DURATION * 0.9);
     cleanupTimer = window.setTimeout(cancel, FLIGHT_DURATION + 700);
-  }, []);
+  }, [reducedMotion]);
 }

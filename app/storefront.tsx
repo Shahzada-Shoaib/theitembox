@@ -6,12 +6,15 @@ import { Brand, Icon } from "./brand";
 import { products, formatPrice, type Product } from "./products";
 import { useBag } from "./use-bag";
 import { useCartFlight } from "./use-cart-flight";
+import { useMotionPreference } from "./use-motion-preference";
 
 // Preserve the complete supplied film, including its opening frame.
 const FILM_START = 0;
-// Version the media URL and remount its element so an open tab drops its old buffer.
-const FILM_SOURCE = "/download.mp4?v=52abfa9e34a2";
+// Every frame is independently seekable; version the URL to replace old buffers.
+const FILM_SOURCE = "/hero-scroll.mp4?v=1844a9b47857";
 const FILM_POSTER = "/images/download-poster.jpg?v=52abfa9e34a2";
+const FILM_SCRUB_RESPONSE = 65;
+const FILM_PLAY_DURATION = 11600;
 const clamp = (n: number) => Math.min(1, Math.max(0, n));
 type Panel = "search" | "bag" | "menu" | null;
 
@@ -39,9 +42,9 @@ export default function Storefront() {
   const [query, setQuery] = useState("");
   const [bag, setBag] = useBag();
   const [toast, setToast] = useState("");
-  const [reducedMotion, setReducedMotion] = useState(false);
+  const [reducedMotion, setReducedMotion] = useMotionPreference();
   const [showFloatingBag, setShowFloatingBag] = useState(false);
-  const flyToBag = useCartFlight();
+  const flyToBag = useCartFlight(reducedMotion);
 
   useEffect(() => {
     const button = headerBagRef.current;
@@ -57,50 +60,82 @@ export default function Storefront() {
   }, []);
 
   useEffect(() => {
-    const media = matchMedia("(prefers-reduced-motion: reduce)");
-    const update = () => setReducedMotion(media.matches);
-    update();
-    media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
-  }, []);
+    document.documentElement.dataset.motion = reducedMotion ? "reduced" : "full";
+    return () => { delete document.documentElement.dataset.motion; };
+  }, [reducedMotion]);
 
   useEffect(() => {
     const section = storyRef.current;
     const video = videoRef.current;
     if (!section || !video) return;
     let frame = 0;
+    let lastFrameTime = 0;
+    let needsMeasurement = true;
+    let initialized = false;
+    let targetProgress = progressRef.current;
+    let displayedProgress = targetProgress;
     let targetTime = FILM_START;
     const seek = () => {
-      if (video.readyState >= 1 && !video.seeking && Math.abs(video.currentTime - targetTime) > 0.025) video.currentTime = targetTime;
+      if (reducedMotion) return;
+      if (video.readyState >= 1 && !video.seeking && Math.abs(video.currentTime - targetTime) > 1 / 120) video.currentTime = targetTime;
     };
-    const update = () => {
+    const update = (now: number) => {
       frame = 0;
-      const p = clamp(-section.getBoundingClientRect().top / Math.max(1, section.offsetHeight - window.innerHeight));
-      progressRef.current = p;
-      setProgress(p);
+      if (needsMeasurement) {
+        targetProgress = clamp(-section.getBoundingClientRect().top / Math.max(1, section.offsetHeight - window.innerHeight));
+        progressRef.current = targetProgress;
+        needsMeasurement = false;
+      }
+      // Brief, frame-rate-independent damping softens wheel steps without a long tail.
+      const delta = Math.min(64, lastFrameTime ? now - lastFrameTime : 1000 / 60);
+      lastFrameTime = now;
+      const next = reducedMotion || !initialized ? targetProgress : displayedProgress + (targetProgress - displayedProgress) * (1 - Math.exp(-delta / FILM_SCRUB_RESPONSE));
+      const settled = Math.abs(targetProgress - next) < 0.0005;
+      displayedProgress = settled ? targetProgress : next;
+      initialized = true;
+      setProgress(displayedProgress);
       if (Number.isFinite(video.duration)) {
-        targetTime = FILM_START + p * Math.max(0, video.duration - FILM_START - 0.04);
-        if (!reducedMotion) seek();
+        targetTime = FILM_START + displayedProgress * Math.max(0, video.duration - FILM_START - 0.04);
+        seek();
+      }
+      if (!settled) frame = requestAnimationFrame(update);
+    };
+    const scheduleUpdate = () => {
+      if (!frame) {
+        lastFrameTime = 0;
+        frame = requestAnimationFrame(update);
       }
     };
-    const onScroll = () => { if (!frame) frame = requestAnimationFrame(update); };
-    const onMetadata = () => { video.pause(); video.currentTime = FILM_START; update(); };
+    const onScroll = () => {
+      needsMeasurement = true;
+      scheduleUpdate();
+    };
+    const onMetadata = () => {
+      video.pause();
+      setVideoError(false);
+      if (reducedMotion) video.currentTime = FILM_START;
+      onScroll();
+    };
     video.addEventListener("loadedmetadata", onMetadata);
-    video.addEventListener("seeked", seek);
+    video.addEventListener("loadeddata", onMetadata);
+    // Wait for decoding, then seek toward the latest frame on the next paint.
+    video.addEventListener("seeked", scheduleUpdate);
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll);
     window.addEventListener("wheel", stopPlayback, { passive: true });
     window.addEventListener("touchstart", stopPlayback, { passive: true });
     window.addEventListener("keydown", stopPlayback);
-    // Updating a nested <source> alone does not reload an already selected resource.
-    // Explicitly load the active source after registering the scrubbing listeners.
-    video.load();
-    update();
+    // A cached video may already have metadata before this effect subscribes.
+    // Keep its buffer when the motion preference changes.
+    if (video.readyState >= 1) onMetadata();
+    else video.load();
+    onScroll();
     return () => {
       cancelAnimationFrame(frame);
       cancelAnimationFrame(playbackRef.current);
       video.removeEventListener("loadedmetadata", onMetadata);
-      video.removeEventListener("seeked", seek);
+      video.removeEventListener("loadeddata", onMetadata);
+      video.removeEventListener("seeked", scheduleUpdate);
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
       window.removeEventListener("wheel", stopPlayback);
@@ -146,7 +181,7 @@ export default function Storefront() {
     const startProgress = progressRef.current >= 0.99 ? 0 : progressRef.current;
     const start = performance.now();
     const animate = (time: number) => {
-      const p = clamp(startProgress + (time - start) / 14000);
+      const p = clamp(startProgress + (time - start) / FILM_PLAY_DURATION);
       seekTo(p);
       if (p < 1) playbackRef.current = requestAnimationFrame(animate);
       else setIsPlaying(false);
@@ -198,13 +233,18 @@ export default function Storefront() {
 
   function addToBag(product: Product, source: HTMLElement | null) {
     playAddToBagSound();
-    const bagButton = showFloatingBag ? floatingBagRef.current : headerBagRef.current;
-    flyToBag(source, bagButton?.querySelector<HTMLElement>(".bag-flight-target") ?? bagButton);
     const chosenSize = product.category === "Apparel" ? size : "One size";
     setBag(current => {
       const match = current.find(item => item.id === product.id && item.size === chosenSize);
       return match ? current.map(item => item === match ? { ...item, quantity: Math.min(99, item.quantity + 1) } : item) : [...current, { id: product.id, size: chosenSize, quantity: 1 }];
     });
+    const bagButton = showFloatingBag ? floatingBagRef.current : headerBagRef.current;
+    try {
+      flyToBag(source, bagButton?.querySelector<HTMLElement>(".bag-flight-target") ?? bagButton);
+    } catch (error) {
+      // Visual feedback must never interrupt the cart update or leave the dialog open.
+      console.warn("The bag was updated, but the flight animation could not start.", error);
+    }
     setToast(`${product.name} added to your bag`);
     closeDialog();
   }
@@ -216,15 +256,13 @@ export default function Storefront() {
   function cardStyle(index: number): CSSProperties {
     if (reducedMotion) return { opacity: 0, pointerEvents: "none", visibility: "hidden" };
     const starts = [0.015, 0.065, 0.19, 0.43];
-    const ends = [0.52, 0.72, 1.12, 1.3];
     const entrance = clamp((progress - starts[index]) / 0.14);
-    const exit = clamp((progress - ends[index] + 0.13) / 0.13);
-    const visible = entrance * (1 - exit);
+    // Once revealed, keep each card visible through the rest of the hero scroll.
     return {
-      opacity: visible,
-      transform: `translate3d(${(index < 2 ? 1 : -1) * (1 - entrance) * 110}px, calc(${-progress * (index % 2 ? 58 : 95) + exit * -70} * var(--card-drift, 1px)), 0) rotate(${[7, -7, -6, 6][index] + progress * (index % 2 ? 7 : -8)}deg) scale(${0.92 + visible * 0.08})`,
-      pointerEvents: visible > 0.65 ? "auto" : "none",
-      visibility: visible === 0 ? "hidden" : "visible",
+      opacity: entrance,
+      transform: `translate3d(${(index < 2 ? 1 : -1) * (1 - entrance) * 110}px, calc(${-progress * (index % 2 ? 58 : 95)} * var(--card-drift, 1px)), 0) rotate(${[7, -7, -6, 6][index] + progress * (index % 2 ? 7 : -8)}deg) scale(${0.92 + entrance * 0.08})`,
+      pointerEvents: entrance > 0.65 ? "auto" : "none",
+      visibility: entrance === 0 ? "hidden" : "visible",
     };
   }
 
@@ -250,7 +288,7 @@ export default function Storefront() {
           <div className="story-bottom">
             <div className="story-bottom-top"><button className="scroll-prompt" onClick={() => seekTo(Math.min(1, progress + 0.18))}><span className="scroll-icon"><Icon name="down" /></span><span>SCROLL TO UNBOX<span className="prompt-sub">A little discovery with every scroll</span></span></button><div className="chapter-links" aria-label="Film chapters">{["THE INTRO", "THE DETAILS", "THE COLLECTION"].map((label, index) => <button key={label} className={chapter === index ? "active" : ""} onClick={() => seekTo([0, 0.44, 0.86][index])}><span>0{index + 1}</span> {label}</button>)}</div><div className="film-controls"><button className="icon-button" onClick={togglePlayback} aria-label={isPlaying ? "Pause film" : "Play film"}><Icon name={isPlaying ? "pause" : "play"} /></button><span>{isPlaying ? "PLAYING" : "SCROLL FILM"}</span><button className="icon-button" onClick={toggleFullscreen} aria-label="Toggle fullscreen"><Icon name="expand" /></button></div></div>
             <div className="timeline-wrap"><input className="film-timeline" type="range" min="0" max="1000" value={Math.round(progress * 1000)} onChange={event => { stopPlayback(); seekTo(Number(event.target.value) / 1000); }} aria-label="Film progress" aria-valuetext={`${Math.round(progress * 100)} percent`} style={{ "--progress": `${progress * 100}%` } as CSSProperties} /></div>
-            <div className="film-meta"><span>THE ITEM BOX — OBJECTS WITH ATTITUDE.</span><span>{videoError ? "FILM UNAVAILABLE · EXPLORE BELOW" : reducedMotion ? "REDUCED MOTION · EXPLORE AT YOUR PACE" : "AN INTERACTIVE DISCOVERY"}<span className="progress-number">{Math.round(progress * 100).toString().padStart(2, "0")} / 100</span></span></div>
+            <div className="film-meta"><span>THE ITEM BOX — OBJECTS WITH ATTITUDE.</span><span><button className="motion-toggle" onClick={() => { stopPlayback(); setReducedMotion(!reducedMotion); }} aria-pressed={!reducedMotion} aria-label={reducedMotion ? "Enable animations" : "Reduce animations"}>{reducedMotion ? "ENABLE ANIMATIONS" : "MOTION ON"}<span className="motion-status" /></button>{videoError ? "FILM UNAVAILABLE · EXPLORE BELOW" : reducedMotion ? "REDUCED MOTION · EXPLORE AT YOUR PACE" : "AN INTERACTIVE DISCOVERY"}<span className="progress-number">{Math.round(progress * 100).toString().padStart(2, "0")} / 100</span></span></div>
           </div>
         </div>
       </section>
