@@ -1,21 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Brand, Icon } from "./brand";
 import { products, formatPrice, type Product } from "./products";
 import { useBag } from "./use-bag";
 import { useCartFlight } from "./use-cart-flight";
-import { useMotionPreference } from "./use-motion-preference";
-
-// Preserve the complete supplied film, including its opening frame.
-const FILM_START = 0;
-// Every frame is independently seekable; version the URL to replace old buffers.
-const FILM_SOURCE = "/hero-scroll.mp4?v=1844a9b47857";
-const FILM_POSTER = "/images/download-poster.jpg?v=52abfa9e34a2";
-const FILM_SCRUB_RESPONSE = 65;
-const FILM_PLAY_DURATION = 11600;
-const clamp = (n: number) => Math.min(1, Math.max(0, n));
 type Panel = "search" | "bag" | "menu" | null;
 
 function ProductImage({ product, priority = false }: { product: Product; priority?: boolean }) {
@@ -23,18 +13,10 @@ function ProductImage({ product, priority = false }: { product: Product; priorit
 }
 
 export default function Storefront() {
-  const storyRef = useRef<HTMLElement>(null);
-  const stageRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const headerBagRef = useRef<HTMLButtonElement>(null);
   const floatingBagRef = useRef<HTMLButtonElement>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
-  const playbackRef = useRef(0);
-  const progressRef = useRef(0);
-  const [progress, setProgress] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [videoError, setVideoError] = useState(false);
   const [panel, setPanelState] = useState<Panel>(null);
   const [selected, setSelected] = useState<Product | null>(null);
   const [size, setSize] = useState("M");
@@ -42,9 +24,8 @@ export default function Storefront() {
   const [query, setQuery] = useState("");
   const [bag, setBag] = useBag();
   const [toast, setToast] = useState("");
-  const [reducedMotion, setReducedMotion] = useMotionPreference();
   const [showFloatingBag, setShowFloatingBag] = useState(false);
-  const flyToBag = useCartFlight(reducedMotion);
+  const flyToBag = useCartFlight(false);
 
   useEffect(() => {
     const button = headerBagRef.current;
@@ -53,96 +34,6 @@ export default function Storefront() {
     observer.observe(button);
     return () => observer.disconnect();
   }, []);
-
-  const stopPlayback = useCallback(() => {
-    cancelAnimationFrame(playbackRef.current);
-    setIsPlaying(false);
-  }, []);
-
-  useEffect(() => {
-    document.documentElement.dataset.motion = reducedMotion ? "reduced" : "full";
-    return () => { delete document.documentElement.dataset.motion; };
-  }, [reducedMotion]);
-
-  useEffect(() => {
-    const section = storyRef.current;
-    const video = videoRef.current;
-    if (!section || !video) return;
-    let frame = 0;
-    let lastFrameTime = 0;
-    let needsMeasurement = true;
-    let initialized = false;
-    let targetProgress = progressRef.current;
-    let displayedProgress = targetProgress;
-    let targetTime = FILM_START;
-    const seek = () => {
-      if (reducedMotion) return;
-      if (video.readyState >= 1 && !video.seeking && Math.abs(video.currentTime - targetTime) > 1 / 120) video.currentTime = targetTime;
-    };
-    const update = (now: number) => {
-      frame = 0;
-      if (needsMeasurement) {
-        targetProgress = clamp(-section.getBoundingClientRect().top / Math.max(1, section.offsetHeight - window.innerHeight));
-        progressRef.current = targetProgress;
-        needsMeasurement = false;
-      }
-      // Brief, frame-rate-independent damping softens wheel steps without a long tail.
-      const delta = Math.min(64, lastFrameTime ? now - lastFrameTime : 1000 / 60);
-      lastFrameTime = now;
-      const next = reducedMotion || !initialized ? targetProgress : displayedProgress + (targetProgress - displayedProgress) * (1 - Math.exp(-delta / FILM_SCRUB_RESPONSE));
-      const settled = Math.abs(targetProgress - next) < 0.0005;
-      displayedProgress = settled ? targetProgress : next;
-      initialized = true;
-      setProgress(displayedProgress);
-      if (Number.isFinite(video.duration)) {
-        targetTime = FILM_START + displayedProgress * Math.max(0, video.duration - FILM_START - 0.04);
-        seek();
-      }
-      if (!settled) frame = requestAnimationFrame(update);
-    };
-    const scheduleUpdate = () => {
-      if (!frame) {
-        lastFrameTime = 0;
-        frame = requestAnimationFrame(update);
-      }
-    };
-    const onScroll = () => {
-      needsMeasurement = true;
-      scheduleUpdate();
-    };
-    const onMetadata = () => {
-      video.pause();
-      setVideoError(false);
-      if (reducedMotion) video.currentTime = FILM_START;
-      onScroll();
-    };
-    video.addEventListener("loadedmetadata", onMetadata);
-    video.addEventListener("loadeddata", onMetadata);
-    // Wait for decoding, then seek toward the latest frame on the next paint.
-    video.addEventListener("seeked", scheduleUpdate);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    window.addEventListener("wheel", stopPlayback, { passive: true });
-    window.addEventListener("touchstart", stopPlayback, { passive: true });
-    window.addEventListener("keydown", stopPlayback);
-    // A cached video may already have metadata before this effect subscribes.
-    // Keep its buffer when the motion preference changes.
-    if (video.readyState >= 1) onMetadata();
-    else video.load();
-    onScroll();
-    return () => {
-      cancelAnimationFrame(frame);
-      cancelAnimationFrame(playbackRef.current);
-      video.removeEventListener("loadedmetadata", onMetadata);
-      video.removeEventListener("loadeddata", onMetadata);
-      video.removeEventListener("seeked", scheduleUpdate);
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-      window.removeEventListener("wheel", stopPlayback);
-      window.removeEventListener("touchstart", stopPlayback);
-      window.removeEventListener("keydown", stopPlayback);
-    };
-  }, [reducedMotion, stopPlayback]);
 
   useEffect(() => {
     if (!toast) return;
@@ -163,39 +54,7 @@ export default function Storefront() {
     dialog.close();
   }, [dialogOpen]);
 
-  function setPanel(next: Panel) { stopPlayback(); setPanelState(next); }
-
-  function seekTo(p: number) {
-    const section = storyRef.current;
-    if (!section) return;
-    if (reducedMotion) {
-      document.querySelector("#collection")?.scrollIntoView({ behavior: "instant" });
-      return;
-    }
-    window.scrollTo({ top: section.offsetTop + p * (section.offsetHeight - window.innerHeight), behavior: "instant" });
-  }
-
-  function togglePlayback() {
-    if (isPlaying) { stopPlayback(); return; }
-    setIsPlaying(true);
-    const startProgress = progressRef.current >= 0.99 ? 0 : progressRef.current;
-    const start = performance.now();
-    const animate = (time: number) => {
-      const p = clamp(startProgress + (time - start) / FILM_PLAY_DURATION);
-      seekTo(p);
-      if (p < 1) playbackRef.current = requestAnimationFrame(animate);
-      else setIsPlaying(false);
-    };
-    playbackRef.current = requestAnimationFrame(animate);
-  }
-
-  async function toggleFullscreen() {
-    try {
-      if (document.fullscreenElement) await document.exitFullscreen();
-      else if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen();
-      else setToast("Fullscreen is unavailable in this browser. The film already fills your screen.");
-    } catch { setToast("Fullscreen is unavailable in this browser."); }
-  }
+  function setPanel(next: Panel) { setPanelState(next); }
 
   function openProduct(product: Product) { setSelected(product); setSize("M"); setPanel(null); }
   function closeDialog() { setPanel(null); setSelected(null); }
@@ -253,46 +112,27 @@ export default function Storefront() {
     setBag(current => current.map(item => item.id === id && item.size === itemSize ? { ...item, quantity: Math.min(99, item.quantity + delta) } : item).filter(item => item.quantity > 0));
   }
 
-  function cardStyle(index: number): CSSProperties {
-    if (reducedMotion) return { opacity: 0, pointerEvents: "none", visibility: "hidden" };
-    const starts = [0.015, 0.065, 0.19, 0.43];
-    const entrance = clamp((progress - starts[index]) / 0.14);
-    // Once revealed, keep each card visible through the rest of the hero scroll.
-    return {
-      opacity: entrance,
-      transform: `translate3d(${(index < 2 ? 1 : -1) * (1 - entrance) * 110}px, calc(${-progress * (index % 2 ? 58 : 95)} * var(--card-drift, 1px)), 0) rotate(${[7, -7, -6, 6][index] + progress * (index % 2 ? 7 : -8)}deg) scale(${0.92 + entrance * 0.08})`,
-      pointerEvents: entrance > 0.65 ? "auto" : "none",
-      visibility: entrance === 0 ? "hidden" : "visible",
-    };
-  }
-
   const bagCount = bag.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = bag.reduce((sum, item) => sum + (products.find(p => p.id === item.id)?.price ?? 0) * item.quantity, 0);
-  const chapter = progress < 0.3 ? 0 : progress < 0.68 ? 1 : 2;
   const filteredProducts = products.filter(p => filter === "All items" || p.category === filter);
   const searchResults = products.filter(p => `${p.name} ${p.category} ${p.subtitle}`.toLowerCase().includes(query.toLowerCase()));
 
   return <>
     <a className="skip-link" href="#collection">Skip to collection</a>
     <main>
-      <section className="scroll-story" ref={storyRef} id="top" aria-label="The Item Box interactive lookbook">
-        <div className="cinema-stage" ref={stageRef}>
-          <video key={FILM_SOURCE} ref={videoRef} src={FILM_SOURCE} className="hero-video" muted playsInline preload="auto" poster={FILM_POSTER} onError={() => setVideoError(true)} aria-hidden="true" />
+      <section className="scroll-story" id="top" aria-label="The Item Box collection film">
+        <div className="cinema-stage">
+          <video className="hero-video" autoPlay loop muted playsInline preload="auto" aria-hidden="true">
+            <source src="/home.mp4" type="video/mp4" />
+          </video>
           <h1 className="sr-only">The Item Box — The collection film</h1>
           <header className="site-header">
             <a href="#top" className="brand-link" aria-label="The Item Box home"><Brand /></a>
-            <nav className="desktop-nav" aria-label="Main navigation"><a href="#collection">The collection <span className="nav-count">04</span></a><button onClick={() => seekTo(0.45)}>The lookbook <span className="tiny-dot" /></button><a href="#about">Our world</a></nav>
+            <nav className="desktop-nav" aria-label="Main navigation"><a href="#collection">The collection <span className="nav-count">04</span></a><a href="#about">Our world</a></nav>
             <div className="header-actions"><button className="icon-button search-button" aria-label="Search the collection" onClick={() => { setQuery(""); setPanel("search"); }}><Icon name="search" /></button><span className="header-divider" /><button ref={headerBagRef} className="bag-button" onClick={() => setPanel("bag")} aria-label={`Open bag, ${bagCount} items`}><span className="bag-flight-target"><Icon name="bag" /></span><span>Bag</span><span className="bag-count">{bagCount.toString().padStart(2, "0")}</span></button><button className="icon-button mobile-menu" aria-label="Open menu" onClick={() => setPanel("menu")}><Icon name="menu" /></button></div>
           </header>
-          <div className="floating-products" aria-label="Featured products">{products.map((product, index) => <button key={product.id} className={`floating-card float-${index} ${index === 1 ? "card-dark" : ""}`} style={cardStyle(index)} onClick={() => openProduct(product)} tabIndex={Number(cardStyle(index).opacity) > 0.65 ? 0 : -1} aria-label={`View ${product.name}`}><div className="floating-card-top"><span>{index === 0 ? "IN THE SPOTLIGHT" : product.category.toUpperCase()}</span><Icon name="arrow" /></div><div className="floating-image"><ProductImage product={product} priority={index < 2} /></div><div className="floating-card-info"><div><h2>{product.name}</h2><span>{formatPrice(product.price)}</span></div><span className="card-plus"><Icon name="plus" /></span></div></button>)}</div>
-          <div className="story-bottom">
-            <div className="story-bottom-top"><button className="scroll-prompt" onClick={() => seekTo(Math.min(1, progress + 0.18))}><span className="scroll-icon"><Icon name="down" /></span><span>SCROLL TO UNBOX<span className="prompt-sub">A little discovery with every scroll</span></span></button><div className="chapter-links" aria-label="Film chapters">{["THE INTRO", "THE DETAILS", "THE COLLECTION"].map((label, index) => <button key={label} className={chapter === index ? "active" : ""} onClick={() => seekTo([0, 0.44, 0.86][index])}><span>0{index + 1}</span> {label}</button>)}</div><div className="film-controls"><button className="icon-button" onClick={togglePlayback} aria-label={isPlaying ? "Pause film" : "Play film"}><Icon name={isPlaying ? "pause" : "play"} /></button><span>{isPlaying ? "PLAYING" : "SCROLL FILM"}</span><button className="icon-button" onClick={toggleFullscreen} aria-label="Toggle fullscreen"><Icon name="expand" /></button></div></div>
-            <div className="timeline-wrap"><input className="film-timeline" type="range" min="0" max="1000" value={Math.round(progress * 1000)} onChange={event => { stopPlayback(); seekTo(Number(event.target.value) / 1000); }} aria-label="Film progress" aria-valuetext={`${Math.round(progress * 100)} percent`} style={{ "--progress": `${progress * 100}%` } as CSSProperties} /></div>
-            <div className="film-meta"><span>THE ITEM BOX — OBJECTS WITH ATTITUDE.</span><span><button className="motion-toggle" onClick={() => { stopPlayback(); setReducedMotion(!reducedMotion); }} aria-pressed={!reducedMotion} aria-label={reducedMotion ? "Enable animations" : "Reduce animations"}>{reducedMotion ? "ENABLE ANIMATIONS" : "MOTION ON"}<span className="motion-status" /></button>{videoError ? "FILM UNAVAILABLE · EXPLORE BELOW" : reducedMotion ? "REDUCED MOTION · EXPLORE AT YOUR PACE" : "AN INTERACTIVE DISCOVERY"}<span className="progress-number">{Math.round(progress * 100).toString().padStart(2, "0")} / 100</span></span></div>
-          </div>
         </div>
       </section>
-      <div className="brand-strip" aria-label="Play. Wear. Repeat."><div>{Array.from({ length: 4 }, (_, i) => <span key={i} aria-hidden={i > 0}>GOOD TASTE. <span className="strip-outline">GREAT FINDS.</span><span className="strip-star">✳</span> PLAY. WEAR. REPEAT.<span className="strip-star">✳</span></span>)}</div></div>
       <section className="collection-section" id="collection">
         <div className="section-overline"><span><span className="status-dot" /> THE CURATED COLLECTION</span><span>01 — 04 / EVERYDAY ORIGINALS</span></div>
         <div className="collection-heading"><h2>YOUR NEXT<br /><span>GOOD FIND.</span></h2><p>Small details. Big personality.<br />A few things we think you&apos;ll love.</p></div>
@@ -309,7 +149,7 @@ export default function Storefront() {
         {selected && <div className="product-detail"><div className="detail-image"><ProductImage product={selected} /><span className="detail-image-label">THE ITEM BOX / THE EVERYDAY EDIT</span></div><div className="detail-copy"><span className="eyebrow">{selected.tag}</span><h2>{selected.name}</h2><span className="detail-price">{formatPrice(selected.price)}</span><p>{selected.description}</p><div className="detail-color">COLOR <span>{selected.color}</span></div>{selected.category === "Apparel" && <fieldset className="size-picker"><legend>SELECT SIZE</legend>{["S", "M", "L", "XL"].map(s => <button key={s} className={size === s ? "selected" : ""} onClick={() => setSize(s)} aria-pressed={size === s}>{s}</button>)}</fieldset>}<button className="primary-button add-to-bag" onClick={() => addToBag(selected, dialogRef.current?.querySelector(".detail-image") ?? null)}>Add to bag <Icon name="plus" /></button><span className="preview-note">Collection preview · sample product and pricing</span></div></div>}
         {panel === "search" && <div className="panel-inner"><span className="eyebrow">SOMETHING GOOD IS IN HERE.</span><h2>Find your thing.</h2><div className="search-field"><Icon name="search" /><input autoFocus type="search" placeholder="Headphones, frames, your next favourite…" value={query} onChange={event => setQuery(event.target.value)} aria-label="Search products" /></div><div className="search-results">{searchResults.length ? searchResults.map(product => <button key={product.id} className="search-result" onClick={() => openProduct(product)}><span className="result-image"><ProductImage product={product} /></span><span><strong>{product.name}</strong><small>{product.category} · {formatPrice(product.price)}</small></span><Icon name="arrow" /></button>) : <p className="empty-message">No finds for “{query}”. Try “tech”, “tee”, or “frames”.</p>}</div></div>}
         {panel === "bag" && <div className="panel-inner bag-panel"><span className="eyebrow">EXCELLENT TASTE.</span><h2>Your bag. <span>({bagCount})</span></h2>{bag.length ? <><div className="bag-items">{bag.map(item => { const product = products.find(p => p.id === item.id)!; return <div className="bag-item" key={`${item.id}-${item.size}`}><span className="result-image"><ProductImage product={product} /></span><div className="bag-item-copy"><h3>{product.name}</h3><p>{item.size} · {formatPrice(product.price)}</p><div className="quantity-control"><button onClick={() => changeQuantity(item.id, item.size, -1)} aria-label={`Remove one ${product.name}`}><Icon name="minus" /></button><span>{item.quantity}</span><button onClick={() => changeQuantity(item.id, item.size, 1)} aria-label={`Add one ${product.name}`}><Icon name="plus" /></button></div></div><span>{formatPrice(product.price * item.quantity)}</span></div>; })}</div><div className="bag-total"><span>Subtotal</span><strong>{formatPrice(subtotal)}</strong></div><p className="bag-disclaimer">This is a collection preview. Your bag is saved on this device; checkout isn&apos;t available yet.</p><button className="primary-button" onClick={closeDialog}>Keep discovering <Icon name="arrow" /></button></> : <div className="empty-bag"><Icon name="bag" /><h3>A little room for something good.</h3><p>Your next favourite is waiting in the collection.</p><a href="#collection" onClick={closeDialog} className="primary-button">Explore the collection <Icon name="arrow" /></a></div>}</div>}
-        {panel === "menu" && <nav className="panel-inner menu-links" aria-label="Mobile navigation"><Brand /><a href="#collection" onClick={closeDialog}>The collection <Icon name="arrow" /></a><button onClick={() => { closeDialog(); seekTo(0.45); }}>The lookbook <Icon name="arrow" /></button><a href="#about" onClick={closeDialog}>Our world <Icon name="arrow" /></a><button onClick={() => setPanel("search")}>Search <Icon name="search" /></button></nav>}
+        {panel === "menu" && <nav className="panel-inner menu-links" aria-label="Mobile navigation"><Brand /><a href="#collection" onClick={closeDialog}>The collection <Icon name="arrow" /></a><a href="#about" onClick={closeDialog}>Our world <Icon name="arrow" /></a><button onClick={() => setPanel("search")}>Search <Icon name="search" /></button></nav>}
       </div>
     </dialog>
     <div className={`toast ${toast ? "visible" : ""}`} role="status"><Icon name="check" />{toast}</div>

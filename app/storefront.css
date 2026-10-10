@@ -258,13 +258,13 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 @media (max-width: 370px) { .hero-copy h1 { font-size: 55px; } .float-0 { width: 104px; right: -26px; } .float-0 .floating-image { height: 63px; } .hero-copy { top: 24%; } .hero-copy .eyebrow { letter-spacing: 1.2px; } .hero-copy p { font-size: 10px; } .filter-tabs button { padding: 8px 9px; } }
 html[data-motion="reduced"] { scroll-behavior: auto; }
 html[data-motion="reduced"] *, html[data-motion="reduced"] *::before, html[data-motion="reduced"] *::after { animation: none !important; transition: none !important; }
-html[data-motion="reduced"] .scroll-story { height: 100svh; min-height: 660px; }
+html[data-motion="reduced"] .scroll-story { height: 100vh; min-height: 100vh; }
 html[data-motion="reduced"] .cinema-stage { position: relative; }
 html[data-motion="reduced"] :is(.film-controls, .timeline-wrap, .chapter-links, .film-meta .progress-number) { display: none; }
 @media (prefers-reduced-motion: reduce) {
   html:not([data-motion]) { scroll-behavior: auto; }
   html:not([data-motion]) *, html:not([data-motion]) *::before, html:not([data-motion]) *::after { animation: none !important; transition: none !important; }
-  html:not([data-motion]) .scroll-story { height: 100svh; min-height: 660px; }
+  html:not([data-motion]) .scroll-story { height: 100vh; min-height: 100vh; }
   html:not([data-motion]) .cinema-stage { position: relative; }
   html:not([data-motion]) :is(.film-controls, .timeline-wrap, .chapter-links, .film-meta .progress-number) { display: none; }
 }
@@ -294,27 +294,15 @@ html[data-motion="reduced"] :is(.film-controls, .timeline-wrap, .chapter-links, 
   .float-0 .floating-image, .float-1 .floating-image { height: 54px; }
 }
 
-/* Preserve the whole film inside the fullscreen stage, clear of the navigation. */
-.cinema-stage { min-height: 0; background: #0b0b0b; }
+/* Keep the hero clean: the supplied film fills exactly one viewport. */
+.scroll-story { height: 100vh; min-height: 100vh; }
+.cinema-stage { height: 100vh; min-height: 100vh; position: relative; background: #0b0b0b; }
 .cinema-stage .hero-video {
-  top: 105px;
-  bottom: 112px;
-  height: calc(100% - 217px);
+  display: block;
+  inset: 0;
+  height: 100vh;
+  object-fit: cover;
   object-position: center;
-}
-.cinema-stage .float-0, .cinema-stage .float-1 { left: auto; right: 4.5%; }
-.cinema-stage .float-2, .cinema-stage .float-3 { left: 4.5%; right: auto; }
-@media (max-width: 900px) {
-  .cinema-stage .hero-video { top: 90px; height: calc(100% - 195px); }
-}
-@media (max-width: 600px) {
-  .cinema-stage .hero-video { top: 80px; bottom: 100px; height: calc(100% - 180px); }
-  .cinema-stage .floating-card { --card-drift: 0px; width: 96px; padding: 7px; }
-  .cinema-stage .floating-image { height: 44px; }
-  .cinema-stage .float-0 { top: auto; bottom: 110px; left: 6%; right: auto; }
-  .cinema-stage .float-1 { top: auto; bottom: 110px; right: 6%; left: auto; }
-  .cinema-stage .float-2 { top: 100px; left: 6%; right: auto; }
-  .cinema-stage .float-3 { top: 100px; right: 6%; left: auto; }
-  .cinema-stage .floating-card-info h2 { font-size: 7px; }
-  .cinema-stage .floating-card-top { font-size: 4.5px; }
+  transform: scale(1.33);
+  transform-origin: center;
 }
