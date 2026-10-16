@@ -6,6 +6,7 @@ import { Icon } from "./brand";
 import { CollectionSection } from "./collection-section";
 import { HeroSection } from "./hero-section";
 import { products, type Product } from "./products";
+import { ProductReel } from "./product-reel";
 import { ShopDialog, type Panel } from "./shop-dialog";
 import { TeeSlider } from "./tee-slider";
 import { useBag } from "./use-bag";
@@ -136,6 +137,7 @@ export default function Storefront() {
     <main>
       <HeroSection products={products} bagCount={bagCount} bagButtonRef={headerBagRef} onOpenProduct={openProduct} onOpenBag={() => openPanel("bag")} onOpenMenu={() => openPanel("menu")} onOpenSearch={() => { setQuery(""); openPanel("search"); }} />
       <TeeSlider products={products} onOpenProduct={openProduct} />
+      <ProductReel products={products} onOpenProduct={openProduct} />
       <CollectionSection products={products} filter={filter} onFilterChange={setFilter} onOpenProduct={openProduct} onQuickAdd={(product, source) => product.category === "Apparel" ? openProduct(product) : addToBag(product, source)} />
       <AboutSection />
       <SiteFooter />
