@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
 
 export function Brand({ compact = false }: { compact?: boolean }) {
-  return <span className={`brand ${compact ? "brand-compact" : ""}`}>
-    <svg viewBox="0 0 146 46" fill="none" aria-hidden="true"><path d="M9 4H63L53 15H37V42H22V15H0L9 4Z" fill="currentColor" /><path d="M67 4H80V42H67V4Z" fill="#B7FF00" /><path fillRule="evenodd" d="M87 4H130L142 15V21L137 25L145 31V35L136 42H87V4ZM101 14V20H126V14H101ZM101 27V33H126V27H101Z" fill="currentColor" /></svg>
-    {!compact && <span>THE ITEM BOX</span>}
+  return <span className="brand inline-flex w-[100px] flex-col gap-[5px] max-[600px]:w-[82px]">
+    <svg className="block h-auto w-full" viewBox="0 0 146 46" fill="none" aria-hidden="true"><path d="M9 4H63L53 15H37V42H22V15H0L9 4Z" fill="currentColor" /><path d="M67 4H80V42H67V4Z" fill="#B7FF00" /><path fillRule="evenodd" d="M87 4H130L142 15V21L137 25L145 31V35L136 42H87V4ZM101 14V20H126V14H101ZM101 27V33H126V27H101Z" fill="currentColor" /></svg>
+    {!compact && <span className="whitespace-nowrap text-[8px] tracking-[3.05px] max-[600px]:text-[6.5px] max-[600px]:tracking-[2.5px]">THE ITEM BOX</span>}
   </span>;
 }
 

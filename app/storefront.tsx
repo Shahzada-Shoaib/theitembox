@@ -1,23 +1,22 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import { Brand, Icon } from "./brand";
-import { products, formatPrice, type Product } from "./products";
+import { AboutSection, SiteFooter } from "./about-section";
+import { Icon } from "./brand";
+import { CollectionSection } from "./collection-section";
+import { HeroSection } from "./hero-section";
+import { products, type Product } from "./products";
+import { ShopDialog, type Panel } from "./shop-dialog";
+import { TeeSlider } from "./tee-slider";
 import { useBag } from "./use-bag";
 import { useCartFlight } from "./use-cart-flight";
-type Panel = "search" | "bag" | "menu" | null;
-
-function ProductImage({ product, priority = false }: { product: Product; priority?: boolean }) {
-  return <Image src={product.image} alt={product.subtitle} fill unoptimized sizes="(max-width: 600px) 50vw, 350px" priority={priority} loading={priority ? undefined : "eager"} className={`product-image image-${product.id}`} />;
-}
 
 export default function Storefront() {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const headerBagRef = useRef<HTMLButtonElement>(null);
   const floatingBagRef = useRef<HTMLButtonElement>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
-  const [panel, setPanelState] = useState<Panel>(null);
+  const [panel, setPanel] = useState<Panel>(null);
   const [selected, setSelected] = useState<Product | null>(null);
   const [size, setSize] = useState("M");
   const [filter, setFilter] = useState("All items");
@@ -45,19 +44,34 @@ export default function Storefront() {
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
-    if (dialogOpen) {
-      dialog.showModal();
-      const previous = document.body.style.overflow;
-      document.body.style.overflow = "hidden";
-      return () => { document.body.style.overflow = previous; dialog.close(); };
+    if (!dialogOpen) {
+      dialog.close();
+      return;
     }
-    dialog.close();
+    dialog.showModal();
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+      dialog.close();
+    };
   }, [dialogOpen]);
 
-  function setPanel(next: Panel) { setPanelState(next); }
+  function openPanel(next: Panel) {
+    setSelected(null);
+    setPanel(next);
+  }
 
-  function openProduct(product: Product) { setSelected(product); setSize("M"); setPanel(null); }
-  function closeDialog() { setPanel(null); setSelected(null); }
+  function openProduct(product: Product) {
+    setSelected(product);
+    setSize("M");
+    setPanel(null);
+  }
+
+  function closeDialog() {
+    setPanel(null);
+    setSelected(null);
+  }
 
   function playAddToBagSound() {
     if (typeof window === "undefined" || !window.AudioContext) return;
@@ -86,7 +100,7 @@ export default function Storefront() {
       if (context.state === "suspended") void context.resume().then(playChime).catch(() => undefined);
       else playChime();
     } catch {
-      // Audio is optional; adding to the bag must keep working if playback is unavailable.
+      // Sound is optional; the bag update should always continue.
     }
   }
 
@@ -95,63 +109,41 @@ export default function Storefront() {
     const chosenSize = product.category === "Apparel" ? size : "One size";
     setBag(current => {
       const match = current.find(item => item.id === product.id && item.size === chosenSize);
-      return match ? current.map(item => item === match ? { ...item, quantity: Math.min(99, item.quantity + 1) } : item) : [...current, { id: product.id, size: chosenSize, quantity: 1 }];
+      return match
+        ? current.map(item => item === match ? { ...item, quantity: Math.min(99, item.quantity + 1) } : item)
+        : [...current, { id: product.id, size: chosenSize, quantity: 1 }];
     });
     const bagButton = showFloatingBag ? floatingBagRef.current : headerBagRef.current;
     try {
       flyToBag(source, bagButton?.querySelector<HTMLElement>(".bag-flight-target") ?? bagButton);
     } catch (error) {
-      // Visual feedback must never interrupt the cart update or leave the dialog open.
       console.warn("The bag was updated, but the flight animation could not start.", error);
     }
     setToast(`${product.name} added to your bag`);
     closeDialog();
   }
 
-  function changeQuantity(id: string, itemSize: string, delta: number) {
+  function changeQuantity(id: Product["id"], itemSize: string, delta: number) {
     setBag(current => current.map(item => item.id === id && item.size === itemSize ? { ...item, quantity: Math.min(99, item.quantity + delta) } : item).filter(item => item.quantity > 0));
   }
 
   const bagCount = bag.reduce((sum, item) => sum + item.quantity, 0);
-  const subtotal = bag.reduce((sum, item) => sum + (products.find(p => p.id === item.id)?.price ?? 0) * item.quantity, 0);
-  const filteredProducts = products.filter(p => filter === "All items" || p.category === filter);
-  const searchResults = products.filter(p => `${p.name} ${p.category} ${p.subtitle}`.toLowerCase().includes(query.toLowerCase()));
+  const subtotal = bag.reduce((sum, item) => sum + (products.find(product => product.id === item.id)?.price ?? 0) * item.quantity, 0);
+  const searchResults = products.filter(product => `${product.name} ${product.category} ${product.subtitle}`.toLowerCase().includes(query.toLowerCase()));
 
   return <>
-    <a className="skip-link" href="#collection">Skip to collection</a>
+    <a className="fixed left-5 -top-[70px] z-[100] bg-[#b7ff00] px-[25px] py-[15px] text-[#0b0b0b] focus:top-3" href="#collection">Skip to collection</a>
     <main>
-      <section className="scroll-story" id="top" aria-label="The Item Box collection film">
-        <div className="cinema-stage">
-          <video className="hero-video" autoPlay loop muted playsInline preload="auto" aria-hidden="true">
-            <source src="/home.mp4" type="video/mp4" />
-          </video>
-          <h1 className="sr-only">The Item Box — The collection film</h1>
-          <header className="site-header">
-            <a href="#top" className="brand-link" aria-label="The Item Box home"><Brand /></a>
-            <nav className="desktop-nav" aria-label="Main navigation"><a href="#collection">The collection <span className="nav-count">04</span></a><a href="#about">Our world</a></nav>
-            <div className="header-actions"><button className="icon-button search-button" aria-label="Search the collection" onClick={() => { setQuery(""); setPanel("search"); }}><Icon name="search" /></button><span className="header-divider" /><button ref={headerBagRef} className="bag-button" onClick={() => setPanel("bag")} aria-label={`Open bag, ${bagCount} items`}><span className="bag-flight-target"><Icon name="bag" /></span><span>Bag</span><span className="bag-count">{bagCount.toString().padStart(2, "0")}</span></button><button className="icon-button mobile-menu" aria-label="Open menu" onClick={() => setPanel("menu")}><Icon name="menu" /></button></div>
-          </header>
-        </div>
-      </section>
-      <section className="collection-section" id="collection">
-        <div className="section-overline"><span><span className="status-dot" /> THE CURATED COLLECTION</span><span>01 — 04 / EVERYDAY ORIGINALS</span></div>
-        <div className="collection-heading"><h2>YOUR NEXT<br /><span>GOOD FIND.</span></h2><p>Small details. Big personality.<br />A few things we think you&apos;ll love.</p></div>
-        <div className="collection-toolbar"><div className="filter-tabs" aria-label="Filter collection">{["All items", "Tech", "Accessories", "Apparel"].map(category => <button key={category} className={filter === category ? "active" : ""} aria-pressed={filter === category} onClick={() => setFilter(category)}>{category}{category === "All items" && <span>04</span>}</button>)}</div><span className="results-count">{filteredProducts.length.toString().padStart(2, "0")} GOOD FINDS</span></div>
-        <div className="product-grid">{filteredProducts.map((product, index) => <article className="collection-product" key={product.id}><div className="collection-image"><button className="product-image-button" onClick={() => openProduct(product)} aria-label={`View ${product.name}`}><ProductImage product={product} /><span className="product-number">0{products.indexOf(product) + 1}</span>{index === 0 && <span className="product-badge">THE EDIT</span>}</button><button className="product-quick-add" aria-label={product.category === "Apparel" ? `Choose size for ${product.name}` : `Add ${product.name} to bag`} onClick={event => product.category === "Apparel" ? openProduct(product) : addToBag(product, event.currentTarget.closest(".collection-image"))}><Icon name="plus" /></button></div><button className="product-info-button" onClick={() => openProduct(product)}><span className="product-info"><span><span className="product-category">{product.category}</span><span className="product-name">{product.name}</span></span><span className="product-price">{formatPrice(product.price)}</span></span><span className="product-color"><span style={{ background: product.id === "sound" ? "#252525" : product.id === "frames" ? "#aa9877" : "#e8e6df" }} />{product.color}</span></button></article>)}</div>
-        <p className="collection-note">A preview of what&apos;s inside. Sample products & pricing.</p>
-      </section>
-      <section className="about-section" id="about"><div className="about-mark"><Brand compact /><span>EST. FOR THE EVERYDAY.</span></div><div className="about-copy"><span className="eyebrow">NOT JUST THINGS. YOUR THINGS.</span><h2>A little less ordinary.<br />A little more <em>you.</em></h2><p>We&apos;re The Item Box. A home for everyday pieces with a point of view. The things you wear, the things you carry, the things that become part of your story. Thoughtfully brought together. Ready to make your own.</p><a href="#collection" className="text-link">Find your thing <Icon name="arrow" /></a></div></section>
-      <footer className="site-footer"><a href="#top" aria-label="Back to top"><Brand /></a><span>© {new Date().getFullYear()} THE ITEM BOX</span><a href="#top" className="back-top">BACK TO TOP <Icon name="arrow" /></a></footer>
+      <HeroSection products={products} bagCount={bagCount} bagButtonRef={headerBagRef} onOpenProduct={openProduct} onOpenBag={() => openPanel("bag")} onOpenMenu={() => openPanel("menu")} onOpenSearch={() => { setQuery(""); openPanel("search"); }} />
+      <TeeSlider products={products} onOpenProduct={openProduct} />
+      <CollectionSection products={products} filter={filter} onFilterChange={setFilter} onOpenProduct={openProduct} onQuickAdd={(product, source) => product.category === "Apparel" ? openProduct(product) : addToBag(product, source)} />
+      <AboutSection />
+      <SiteFooter />
     </main>
-    <button ref={floatingBagRef} className={`bag-button floating-bag ${showFloatingBag ? "is-visible" : ""}`} aria-label={`Open bag, ${bagCount} items`} aria-hidden={!showFloatingBag} tabIndex={showFloatingBag ? 0 : -1} onClick={() => setPanel("bag")}><span className="bag-flight-target"><Icon name="bag" /></span><span>Bag</span><span className="bag-count">{bagCount.toString().padStart(2, "0")}</span></button>
-    <dialog ref={dialogRef} className={`shop-dialog ${selected ? "product-dialog" : ""}`} onCancel={closeDialog} onClick={event => { if (event.target === event.currentTarget) closeDialog(); }} aria-label={selected?.name ?? (panel === "bag" ? "Your shopping bag" : panel === "search" ? "Search collection" : "Navigation menu")}>
-      <div className="dialog-content"><button className="dialog-close icon-button" onClick={closeDialog} aria-label="Close dialog"><Icon name="close" /></button>
-        {selected && <div className="product-detail"><div className="detail-image"><ProductImage product={selected} /><span className="detail-image-label">THE ITEM BOX / THE EVERYDAY EDIT</span></div><div className="detail-copy"><span className="eyebrow">{selected.tag}</span><h2>{selected.name}</h2><span className="detail-price">{formatPrice(selected.price)}</span><p>{selected.description}</p><div className="detail-color">COLOR <span>{selected.color}</span></div>{selected.category === "Apparel" && <fieldset className="size-picker"><legend>SELECT SIZE</legend>{["S", "M", "L", "XL"].map(s => <button key={s} className={size === s ? "selected" : ""} onClick={() => setSize(s)} aria-pressed={size === s}>{s}</button>)}</fieldset>}<button className="primary-button add-to-bag" onClick={() => addToBag(selected, dialogRef.current?.querySelector(".detail-image") ?? null)}>Add to bag <Icon name="plus" /></button><span className="preview-note">Collection preview · sample product and pricing</span></div></div>}
-        {panel === "search" && <div className="panel-inner"><span className="eyebrow">SOMETHING GOOD IS IN HERE.</span><h2>Find your thing.</h2><div className="search-field"><Icon name="search" /><input autoFocus type="search" placeholder="Headphones, frames, your next favourite…" value={query} onChange={event => setQuery(event.target.value)} aria-label="Search products" /></div><div className="search-results">{searchResults.length ? searchResults.map(product => <button key={product.id} className="search-result" onClick={() => openProduct(product)}><span className="result-image"><ProductImage product={product} /></span><span><strong>{product.name}</strong><small>{product.category} · {formatPrice(product.price)}</small></span><Icon name="arrow" /></button>) : <p className="empty-message">No finds for “{query}”. Try “tech”, “tee”, or “frames”.</p>}</div></div>}
-        {panel === "bag" && <div className="panel-inner bag-panel"><span className="eyebrow">EXCELLENT TASTE.</span><h2>Your bag. <span>({bagCount})</span></h2>{bag.length ? <><div className="bag-items">{bag.map(item => { const product = products.find(p => p.id === item.id)!; return <div className="bag-item" key={`${item.id}-${item.size}`}><span className="result-image"><ProductImage product={product} /></span><div className="bag-item-copy"><h3>{product.name}</h3><p>{item.size} · {formatPrice(product.price)}</p><div className="quantity-control"><button onClick={() => changeQuantity(item.id, item.size, -1)} aria-label={`Remove one ${product.name}`}><Icon name="minus" /></button><span>{item.quantity}</span><button onClick={() => changeQuantity(item.id, item.size, 1)} aria-label={`Add one ${product.name}`}><Icon name="plus" /></button></div></div><span>{formatPrice(product.price * item.quantity)}</span></div>; })}</div><div className="bag-total"><span>Subtotal</span><strong>{formatPrice(subtotal)}</strong></div><p className="bag-disclaimer">This is a collection preview. Your bag is saved on this device; checkout isn&apos;t available yet.</p><button className="primary-button" onClick={closeDialog}>Keep discovering <Icon name="arrow" /></button></> : <div className="empty-bag"><Icon name="bag" /><h3>A little room for something good.</h3><p>Your next favourite is waiting in the collection.</p><a href="#collection" onClick={closeDialog} className="primary-button">Explore the collection <Icon name="arrow" /></a></div>}</div>}
-        {panel === "menu" && <nav className="panel-inner menu-links" aria-label="Mobile navigation"><Brand /><a href="#collection" onClick={closeDialog}>The collection <Icon name="arrow" /></a><a href="#about" onClick={closeDialog}>Our world <Icon name="arrow" /></a><button onClick={() => setPanel("search")}>Search <Icon name="search" /></button></nav>}
-      </div>
-    </dialog>
-    <div className={`toast ${toast ? "visible" : ""}`} role="status"><Icon name="check" />{toast}</div>
+    <button ref={floatingBagRef} type="button" className={`fixed right-[4.1%] top-[max(24px,env(safe-area-inset-top))] z-50 flex min-h-[54px] items-center gap-[11px] rounded-[50px] border border-white/15 bg-[#141710ed] px-[17px] py-3 text-xs text-[#f6f6f2] shadow-[0_8px_28px_#00000024] backdrop-blur-2xl transition-[opacity,visibility] duration-200 hover:border-[#b7ff0060] max-[600px]:right-[6%] max-[600px]:top-[max(16px,env(safe-area-inset-top))] max-[600px]:min-h-12 max-[600px]:gap-[7px] max-[600px]:px-3.5 max-[600px]:py-2.5 max-[600px]:text-[11px] ${showFloatingBag ? "visible pointer-events-auto opacity-100" : "invisible pointer-events-none opacity-0"}`} aria-label={`Open bag, ${bagCount} items`} aria-hidden={!showFloatingBag} tabIndex={showFloatingBag ? 0 : -1} onClick={() => openPanel("bag")}>
+      <span className="bag-flight-target grid size-[26px] shrink-0 place-items-center rounded-full [&>svg]:size-[19px]"><Icon name="bag" /></span><span>Bag</span><span className="grid size-[26px] place-items-center rounded-full border border-[#b7ff0045] text-[10px] text-[#b7ff00] max-[600px]:size-[22px] max-[600px]:text-[9px]">{bagCount.toString().padStart(2, "0")}</span>
+    </button>
+    <ShopDialog dialogRef={dialogRef} panel={panel} selected={selected} query={query} bag={bag} bagCount={bagCount} subtotal={subtotal} searchResults={[...searchResults]} onClose={closeDialog} onOpenProduct={openProduct} onPanelChange={openPanel} onQueryChange={setQuery} onQuantityChange={changeQuantity} />
+    <div className={`fixed bottom-[25px] left-1/2 z-[100] flex w-max max-w-[calc(100vw-30px)] -translate-x-1/2 items-center gap-3 bg-[#d0ff58] px-[22px] py-[17px] text-xs text-[#19230a] shadow-[0_8px_30px_#0005] transition duration-200 max-[600px]:px-[18px] max-[600px]:py-3.5 max-[600px]:text-[10px] ${toast ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-5 opacity-0"}`} role="status"><Icon name="check" />{toast}</div>
   </>;
 }
