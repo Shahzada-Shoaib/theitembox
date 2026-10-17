@@ -22,8 +22,8 @@ type ShopDialogProps = {
   onQuantityChange: (id: Product["id"], size: string, delta: number) => void;
 };
 
-const panelClass = "px-[34px] pb-[35px] pt-[47px] max-[600px]:px-[22px] max-[600px]:pb-[26px] max-[600px]:pt-[50px]";
-const eyebrowClass = "flex items-center gap-[11px] text-[8px] font-medium tracking-[2.3px] text-[#b7ff00]";
+const panelClass = "px-[34px] pb-[35px] pt-[47px] max-[600px]:px-[18px] max-[600px]:pb-[22px] max-[600px]:pt-[58px]";
+const eyebrowClass = "flex items-center gap-[11px] text-[8px] font-medium tracking-[2.3px] text-[#b7ff00] max-[600px]:text-[7px] max-[600px]:tracking-[1.6px]";
 
 export function ShopDialog({ dialogRef, panel, selected, query, bag, bagCount, subtotal, searchResults, onClose, onOpenProduct, onPanelChange, onQueryChange, onQuantityChange }: ShopDialogProps) {
   const label = selected?.name ?? (panel === "bag" ? "Your shopping bag" : panel === "search" ? "Search collection" : "Navigation menu");
@@ -31,7 +31,7 @@ export function ShopDialog({ dialogRef, panel, selected, query, bag, bagCount, s
   return (
     <dialog
       ref={dialogRef}
-      className={`shop-dialog fixed m-auto max-h-[calc(100svh-40px)] overflow-auto border border-[#404438] bg-[#141710] p-0 text-[#f6f6ed] backdrop:bg-black/70 backdrop:backdrop-blur-lg ${selected ? "w-[1000px] max-w-[min(1000px,calc(100vw-32px))]" : "w-[650px] max-w-[min(650px,calc(100vw-32px))]"}`}
+      className={`shop-dialog fixed m-auto max-h-[calc(100svh-40px)] overflow-auto border border-[#404438] bg-[#141710] p-0 text-[#f6f6ed] backdrop:bg-black/70 backdrop:backdrop-blur-lg max-[600px]:max-h-[calc(100svh-16px)] ${selected ? "w-[1000px] max-w-[min(1000px,calc(100vw-32px))] max-[600px]:max-w-[calc(100vw-16px)]" : "w-[650px] max-w-[min(650px,calc(100vw-32px))] max-[600px]:max-w-[calc(100vw-16px)]"}`}
       onCancel={onClose}
       onClick={event => { if (event.target === event.currentTarget) onClose(); }}
       aria-label={label}
@@ -44,9 +44,9 @@ export function ShopDialog({ dialogRef, panel, selected, query, bag, bagCount, s
         {panel === "menu" && (
           <nav className={`${panelClass} flex flex-col gap-1.5 [&_.brand]:mb-7`} aria-label="Mobile navigation">
             <Brand />
-            <a className="flex items-center justify-between border-b border-[#4c573b] py-[15px] text-left text-[25px]" href="#collection" onClick={onClose}>The collection <Icon name="arrow" /></a>
-            <a className="flex items-center justify-between border-b border-[#4c573b] py-[15px] text-left text-[25px]" href="#about" onClick={onClose}>Our world <Icon name="arrow" /></a>
-            <button type="button" className="flex items-center justify-between border-b border-[#4c573b] py-[15px] text-left text-[25px]" onClick={() => onPanelChange("search")}>Search <Icon name="search" /></button>
+            <a className="flex min-h-14 items-center justify-between border-b border-[#4c573b] py-[15px] text-left text-[clamp(21px,7vw,25px)]" href="#collection" onClick={onClose}>The collection <Icon name="arrow" /></a>
+            <a className="flex min-h-14 items-center justify-between border-b border-[#4c573b] py-[15px] text-left text-[clamp(21px,7vw,25px)]" href="#about" onClick={onClose}>Our world <Icon name="arrow" /></a>
+            <button type="button" className="flex min-h-14 items-center justify-between border-b border-[#4c573b] py-[15px] text-left text-[clamp(21px,7vw,25px)]" onClick={() => onPanelChange("search")}>Search <Icon name="search" /></button>
           </nav>
         )}
       </div>
@@ -103,7 +103,7 @@ function SearchPanel({ query, results, onQueryChange, onOpenProduct }: { query: 
       <h2 className="mb-[27px] mt-[18px] text-[37px] font-semibold leading-[1.1] tracking-[-1.5px] max-[600px]:text-[32px]">Find your thing.</h2>
       <div className="flex items-center gap-3 border-b border-[#6a7853] py-3.5 focus-within:border-[#b7ff00]">
         <Icon name="search" />
-        <input autoFocus className="min-w-0 w-full border-0 bg-transparent text-xs text-[#f5f5ef] outline-none placeholder:text-[#79866b] max-[600px]:text-[10px]" type="search" placeholder="Headphones, frames, your next favourite…" value={query} onChange={event => onQueryChange(event.target.value)} aria-label="Search products" />
+        <input autoFocus className="min-w-0 w-full border-0 bg-transparent text-xs text-[#f5f5ef] outline-none placeholder:text-[#79866b] max-[600px]:text-base" type="search" placeholder="Headphones, frames, your next favourite…" value={query} onChange={event => onQueryChange(event.target.value)} aria-label="Search products" />
       </div>
       <div className="mt-4">
         {results.length ? results.map(product => (
@@ -129,7 +129,7 @@ function BagPanel({ bag, bagCount, subtotal, onClose, onQuantityChange }: { bag:
           return (
             <div className="flex items-center gap-[15px] border-b border-white/10 py-[18px] max-[600px]:gap-2.5" key={`${item.id}-${item.size}`}>
               <span className="relative block h-[78px] w-[75px] shrink-0 overflow-hidden max-[600px]:h-[75px] max-[600px]:w-[58px]"><ProductImage product={product} /></span>
-              <div className="flex-1"><h3 className="mb-1.5 text-xs font-medium max-[600px]:text-[10px]">{product.name}</h3><p className="mb-2.5 text-[10px] text-[#919c84] max-[600px]:text-[8px]">{item.size} · {formatPrice(product.price)}</p><div className="inline-flex items-center gap-[9px] border border-[#48523c] text-[10px]"><button type="button" className="grid size-[25px] place-items-center hover:text-[#b7ff00] [&>svg]:size-[11px]" onClick={() => onQuantityChange(item.id, item.size, -1)} aria-label={`Remove one ${product.name}`}><Icon name="minus" /></button><span>{item.quantity}</span><button type="button" className="grid size-[25px] place-items-center hover:text-[#b7ff00] [&>svg]:size-[11px]" onClick={() => onQuantityChange(item.id, item.size, 1)} aria-label={`Add one ${product.name}`}><Icon name="plus" /></button></div></div>
+              <div className="flex-1"><h3 className="mb-1.5 text-xs font-medium">{product.name}</h3><p className="mb-2.5 text-[10px] text-[#919c84]">{item.size} · {formatPrice(product.price)}</p><div className="inline-flex items-center gap-2 border border-[#48523c] text-[10px]"><button type="button" className="grid size-9 place-items-center hover:text-[#b7ff00] [&>svg]:size-[12px]" onClick={() => onQuantityChange(item.id, item.size, -1)} aria-label={`Remove one ${product.name}`}><Icon name="minus" /></button><span>{item.quantity}</span><button type="button" className="grid size-9 place-items-center hover:text-[#b7ff00] [&>svg]:size-[12px]" onClick={() => onQuantityChange(item.id, item.size, 1)} aria-label={`Add one ${product.name}`}><Icon name="plus" /></button></div></div>
               <span className="text-[11px] max-[600px]:text-[9px]">{formatPrice(product.price * item.quantity)}</span>
             </div>
           );

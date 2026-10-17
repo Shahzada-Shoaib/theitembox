@@ -6,7 +6,8 @@ import type { Product } from "./products";
 import { SiteHeader } from "./site-header";
 
 const clamp = (value: number) => Math.min(1, Math.max(0, value));
-const entryStarts = [0.03, 0.13, 0.24, 0.35];
+const entryStarts = [0.04, 0.24, 0.44, 0.64];
+const entryDuration = 0.14;
 
 type HeroSectionProps = {
   products: readonly Product[];
@@ -52,7 +53,7 @@ export function HeroSection({ products, bagCount, bagButtonRef, onOpenProduct, o
   }, []);
 
   function productStyle(index: number): CSSProperties {
-    const entrance = clamp((progress - entryStarts[index]) / 0.16);
+    const entrance = clamp((progress - entryStarts[index]) / entryDuration);
     const fromRight = index < 2;
     return {
       opacity: entrance,
@@ -63,8 +64,8 @@ export function HeroSection({ products, bagCount, bagButtonRef, onOpenProduct, o
   }
 
   return (
-    <section ref={storyRef} id="top" aria-label="The Item Box interactive collection" className="relative h-[300svh] min-h-[300svh] motion-reduce:h-screen motion-reduce:min-h-screen max-[600px]:h-[280svh] max-[600px]:min-h-[280svh]">
-      <div className="sticky top-0 isolate h-[100svh] min-h-[620px] overflow-hidden bg-[#f2f2ed] motion-reduce:relative max-[600px]:min-h-[660px]">
+    <section ref={storyRef} id="top" aria-label="The Item Box interactive collection" className="relative h-[220svh] min-h-[220svh] motion-reduce:h-screen motion-reduce:min-h-screen">
+      <div className="sticky top-0 isolate h-[100svh] min-h-[620px] overflow-hidden bg-[#f2f2ed] motion-reduce:relative max-[600px]:min-h-0">
         <video className="absolute inset-0 block size-full origin-center scale-[1.33] object-cover object-center max-[600px]:object-[58%_50%]" autoPlay loop muted playsInline preload="auto" aria-hidden="true">
           <source src="/home.mp4" type="video/mp4" />
         </video>
