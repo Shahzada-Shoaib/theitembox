@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AboutSection, SiteFooter } from "./about-section";
+import { SiteFooter } from "./site-footer";
 import { Icon } from "./brand";
 import { CollectionSection } from "./collection-section";
 import { HeroSection } from "./hero-section";
+import { LookbookSection } from "./lookbook-section";
 import { products, type Product } from "./products";
 import { ProductReel } from "./product-reel";
 import { ShopDialog, type Panel } from "./shop-dialog";
@@ -139,7 +140,7 @@ export default function Storefront() {
       <TeeSlider products={products} onOpenProduct={openProduct} />
       <ProductReel products={products} onOpenProduct={openProduct} />
       <CollectionSection products={products} filter={filter} onFilterChange={setFilter} onOpenProduct={openProduct} onQuickAdd={(product, source) => product.category === "Apparel" ? openProduct(product) : addToBag(product, source)} />
-      <AboutSection />
+      <LookbookSection primary={products[0]} secondary={products[5]} tertiary={products[3]} onOpenProduct={openProduct} />
       <SiteFooter />
     </main>
     <button ref={floatingBagRef} type="button" className={`fixed right-[4.1%] top-[max(24px,env(safe-area-inset-top))] z-50 flex min-h-[54px] items-center gap-[11px] rounded-[50px] border border-white/15 bg-[#141710ed] px-[17px] py-3 text-xs text-[#f6f6f2] shadow-[0_8px_28px_#00000024] backdrop-blur-2xl transition-[opacity,visibility] duration-200 hover:border-[#b7ff0060] max-[600px]:right-[6%] max-[600px]:top-[max(16px,env(safe-area-inset-top))] max-[600px]:min-h-12 max-[600px]:gap-[7px] max-[600px]:px-3.5 max-[600px]:py-2.5 max-[600px]:text-[11px] ${showFloatingBag ? "visible pointer-events-auto opacity-100" : "invisible pointer-events-none opacity-0"}`} aria-label={`Open bag, ${bagCount} items`} aria-hidden={!showFloatingBag} tabIndex={showFloatingBag ? 0 : -1} onClick={() => openPanel("bag")}>

@@ -9,10 +9,10 @@ type ProductReelProps = {
   onOpenProduct: (product: Product) => void;
 };
 
-const ORBIT_DURATION = 28;
-
 export function ProductReel({ products, onOpenProduct }: ProductReelProps) {
   const [paused, setPaused] = useState(false);
+  const [activeProductId, setActiveProductId] = useState(products[0]?.id ?? "");
+  const activeProduct = products.find(product => product.id === activeProductId) ?? products[0];
 
   return (
     <section
@@ -21,48 +21,57 @@ export function ProductReel({ products, onOpenProduct }: ProductReelProps) {
       aria-labelledby="product-reel-title"
     >
       <header className="product-reel-header">
-        <span>THE ROTATING EDIT</span>
         <h2 id="product-reel-title">PICK YOUR PLAYER.</h2>
       </header>
 
       <div className="product-reel-stage" role="region" aria-label="Shirts rotating continuously around a 3D circular track">
-        <div className="product-reel-rig">
-          {products.map((product, index) => {
-            const angle = index * 360 / products.length;
-            const style = {
-              "--orbit-angle": `${angle}deg`,
-              "--facing-angle": `${-angle}deg`,
-              "--orbit-delay": `${-(index * ORBIT_DURATION / products.length)}s`,
-            } as CSSProperties;
+        <div className="product-reel-orbit-plane">
+          <div className="product-reel-rig">
+            {products.map((product, index) => {
+              const angle = index * 360 / products.length;
+              const style = {
+                "--orbit-angle": `${angle}deg`,
+                "--facing-angle": `${-angle}deg`,
+              } as CSSProperties;
 
-            return (
-              <button
-                type="button"
-                className="product-reel-card"
-                style={style}
-                key={product.id}
-                onClick={() => onOpenProduct(product)}
-                aria-label={`View ${product.name}`}
-              >
-                <span className="product-reel-depth">
-                  <span className="product-reel-facing-offset">
-                    <span className="product-reel-facing">
-                      <span className="product-reel-image">
-                        <ProductImage product={product} sizes="(max-width: 600px) 52vw, 310px" unoptimized={false} />
+              return (
+                <button
+                  type="button"
+                  className="product-reel-card"
+                  style={style}
+                  key={product.id}
+                  onClick={() => onOpenProduct(product)}
+                  onMouseEnter={() => setActiveProductId(product.id)}
+                  onFocus={() => setActiveProductId(product.id)}
+                  aria-label={`View ${product.name}`}
+                >
+                  <span className="product-reel-depth">
+                    <span className="product-reel-facing-offset">
+                      <span className="product-reel-facing">
+                        <span className="product-reel-image">
+                          <ProductImage product={product} sizes="(max-width: 600px) 52vw, 310px" unoptimized={false} />
+                        </span>
                       </span>
                     </span>
                   </span>
-                </span>
-              </button>
-            );
-          })}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      <div className="product-reel-info">
-        <span><span>{products.length.toString().padStart(2, "0")} PIECES</span>THE GAMING DROP</span>
-        <span>SELECT A SHIRT</span>
-      </div>
+      {activeProduct && (
+        <div className="product-reel-info">
+          <span className="product-reel-summary">
+            <strong aria-live="polite">{activeProduct.name}</strong>
+          </span>
+          <button type="button" className="product-reel-view" onClick={() => onOpenProduct(activeProduct)}>
+            <span>{formatPrice(activeProduct.price)}</span>
+            VIEW PRODUCT
+          </button>
+        </div>
+      )}
 
       <div className="product-reel-controls" aria-label="Product reel controls">
         <button type="button" onClick={() => setPaused(current => !current)} aria-label={paused ? "Resume rotation" : "Pause rotation"} aria-pressed={paused}>

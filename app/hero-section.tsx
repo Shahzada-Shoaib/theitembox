@@ -22,6 +22,25 @@ type HeroSectionProps = {
 export function HeroSection({ products, bagCount, bagButtonRef, onOpenProduct, onOpenBag, onOpenMenu, onOpenSearch }: HeroSectionProps) {
   const storyRef = useRef<HTMLElement>(null);
   const [progress, setProgress] = useState(0);
+  const [showHeader, setShowHeader] = useState(false);
+
+  useEffect(() => {
+    let frame = 0;
+    const updateHeader = () => {
+      frame = 0;
+      setShowHeader(window.scrollY > 24);
+    };
+    const requestUpdate = () => {
+      if (!frame) frame = requestAnimationFrame(updateHeader);
+    };
+
+    requestUpdate();
+    window.addEventListener("scroll", requestUpdate, { passive: true });
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", requestUpdate);
+    };
+  }, []);
 
   useEffect(() => {
     const story = storyRef.current;
@@ -70,7 +89,7 @@ export function HeroSection({ products, bagCount, bagButtonRef, onOpenProduct, o
           <source src="/home.mp4" type="video/mp4" />
         </video>
         <h1 className="sr-only">The Item Box — The collection film</h1>
-        <SiteHeader bagCount={bagCount} bagButtonRef={bagButtonRef} productCount={products.length} onOpenBag={onOpenBag} onOpenMenu={onOpenMenu} onOpenSearch={onOpenSearch} />
+        <SiteHeader visible={showHeader} bagCount={bagCount} bagButtonRef={bagButtonRef} productCount={products.length} onOpenBag={onOpenBag} onOpenMenu={onOpenMenu} onOpenSearch={onOpenSearch} />
         <div className="pointer-events-none absolute inset-0" aria-label="Featured products">
           <svg className="absolute pointer-events-none" width="0" height="0" aria-hidden="true" focusable="false">
             <defs>

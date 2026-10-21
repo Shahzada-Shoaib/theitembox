@@ -31,13 +31,13 @@ export function ShopDialog({ dialogRef, panel, selected, query, bag, bagCount, s
   return (
     <dialog
       ref={dialogRef}
-      className={`shop-dialog fixed m-auto max-h-[calc(100svh-40px)] overflow-auto border border-[#404438] bg-[#141710] p-0 text-[#f6f6ed] backdrop:bg-black/70 backdrop:backdrop-blur-lg max-[600px]:max-h-[calc(100svh-16px)] ${selected ? "w-[1000px] max-w-[min(1000px,calc(100vw-32px))] max-[600px]:max-w-[calc(100vw-16px)]" : "w-[650px] max-w-[min(650px,calc(100vw-32px))] max-[600px]:max-w-[calc(100vw-16px)]"}`}
+      className={`shop-dialog fixed m-auto max-h-[calc(100svh-40px)] overflow-auto border p-0 backdrop:bg-black/70 backdrop:backdrop-blur-lg max-[600px]:max-h-[calc(100svh-16px)] ${selected ? "w-[1000px] max-w-[min(1000px,calc(100vw-32px))] border-[#d5d5ce] bg-[#efefeb] text-[#171914] max-[600px]:max-w-[calc(100vw-16px)]" : "w-[650px] max-w-[min(650px,calc(100vw-32px))] border-[#404438] bg-[#141710] text-[#f6f6ed] max-[600px]:max-w-[calc(100vw-16px)]"}`}
       onCancel={onClose}
       onClick={event => { if (event.target === event.currentTarget) onClose(); }}
       aria-label={label}
     >
       <div className="relative">
-        <IconButton label="Close dialog" icon="close" className="absolute right-[15px] top-[15px] z-[3] rounded-full border border-[#4c5240] bg-[#141710]" onClick={onClose} />
+        <IconButton label="Close dialog" icon="close" className={`absolute right-[15px] top-[15px] z-[5] rounded-full ${selected ? "border border-[#c9c9c1] bg-[#f7f7f3]/90 text-[#171914] shadow-[0_8px_24px_#34352f14] backdrop-blur-md hover:bg-white" : "border border-[#4c5240] bg-[#141710]"}`} onClick={onClose} />
         {selected && <ProductDetails product={selected} />}
         {panel === "search" && <SearchPanel query={query} results={searchResults} onQueryChange={onQueryChange} onOpenProduct={onOpenProduct} />}
         {panel === "bag" && <BagPanel bag={bag} bagCount={bagCount} subtotal={subtotal} onClose={onClose} onQuantityChange={onQuantityChange} />}
@@ -45,7 +45,6 @@ export function ShopDialog({ dialogRef, panel, selected, query, bag, bagCount, s
           <nav className={`${panelClass} flex flex-col gap-1.5 [&_.brand]:mb-7`} aria-label="Mobile navigation">
             <Brand />
             <a className="flex min-h-14 items-center justify-between border-b border-[#4c573b] py-[15px] text-left text-[clamp(21px,7vw,25px)]" href="#collection" onClick={onClose}>The collection <Icon name="arrow" /></a>
-            <a className="flex min-h-14 items-center justify-between border-b border-[#4c573b] py-[15px] text-left text-[clamp(21px,7vw,25px)]" href="#about" onClick={onClose}>Our world <Icon name="arrow" /></a>
             <button type="button" className="flex min-h-14 items-center justify-between border-b border-[#4c573b] py-[15px] text-left text-[clamp(21px,7vw,25px)]" onClick={() => onPanelChange("search")}>Search <Icon name="search" /></button>
           </nav>
         )}
@@ -60,7 +59,7 @@ type ProductDetailsProps = {
 
 function ProductDetails({ product }: ProductDetailsProps) {
   return (
-    <div className="h-[620px] w-full bg-[linear-gradient(90deg,#b7ff00_0%,#b7ff00_50%,#090b07_50%,#090b07_100%)] max-[600px]:h-[680px] max-[600px]:bg-[linear-gradient(180deg,#b7ff00_0%,#b7ff00_46%,#090b07_46%,#090b07_100%)]">
+    <div className="product-detail-surface h-[620px] w-full text-[#171914] max-[600px]:h-[680px]">
       <div className="detail-image relative h-full overflow-hidden">
         <div className="absolute left-9 top-8 z-[1] text-[#0b0d08] opacity-90 [&_.brand]:w-[150px] max-[600px]:left-5 max-[600px]:top-5 max-[600px]:[&_.brand]:w-[105px]"><Brand compact /></div>
         <span className="absolute left-10 top-[98px] z-[1] text-[7px] font-semibold tracking-[2.2px] text-[#26320f] max-[600px]:left-5 max-[600px]:top-[73px] max-[600px]:text-[6px]">THE EVERYDAY EDIT / 2026</span>
@@ -70,7 +69,7 @@ function ProductDetails({ product }: ProductDetailsProps) {
         </div>
 
         <div className="absolute right-10 top-10 z-[3] w-[38%] max-[600px]:left-5 max-[600px]:right-auto max-[600px]:top-[52%] max-[600px]:w-[80%]">
-          <span className="text-[7px] tracking-[2px] text-[#b7ff00]">{product.tag}</span>
+          <span className="text-[7px] font-semibold tracking-[2px] text-[#59604f]">{product.tag}</span>
           <h2 className="mt-2 max-w-[300px] text-[30px] font-semibold leading-[1.02] tracking-[-1.4px] max-[600px]:text-[22px]">{product.name}</h2>
         </div>
 
@@ -84,14 +83,14 @@ function ProductDetails({ product }: ProductDetailsProps) {
 }
 
 function DetailChip({ side, label, value, className, lineClassName }: { side: "left" | "right"; label: string; value: string; className: string; lineClassName: string }) {
-  const lineColor = side === "left" ? "bg-[#283114]/55" : "bg-white/35 max-[600px]:bg-[#283114]/55";
-  const dotColor = side === "left" ? "bg-[#15180f]" : "bg-[#b7ff00] shadow-[0_0_8px_#b7ff00] max-[600px]:bg-[#15180f] max-[600px]:shadow-none";
+  const lineColor = "bg-[#777b70]/55";
+  const dotColor = "bg-[#52574c]";
 
   return (
-    <div className={`absolute z-[4] min-w-[128px] border border-white/20 bg-[#10120de8] px-3 py-2.5 shadow-[0_8px_30px_#0003] max-[600px]:min-w-[104px] max-[600px]:px-2.5 max-[600px]:py-2 ${className}`}>
+    <div className={`absolute z-[4] min-w-[128px] border border-white/80 bg-[#f8f8f4]/88 px-3 py-2.5 shadow-[0_12px_32px_#36372f1a] backdrop-blur-md max-[600px]:min-w-[104px] max-[600px]:px-2.5 max-[600px]:py-2 ${className}`}>
       <span className={`absolute top-1/2 h-px ${lineColor} ${side === "right" ? "right-full" : "left-full"} ${lineClassName}`}><span className={`absolute -top-0.5 size-[5px] rounded-full ${dotColor} ${side === "right" ? "-left-0.5" : "-right-0.5"}`} /></span>
-      <span className="block text-[6px] tracking-[1.6px] text-[#7f8975]">{label}</span>
-      <strong className="mt-1 block text-[10px] font-medium text-[#f4f5ee] max-[600px]:text-[9px]">{value}</strong>
+      <span className="block text-[6px] tracking-[1.6px] text-[#777b70]">{label}</span>
+      <strong className="mt-1 block text-[10px] font-medium text-[#22241f] max-[600px]:text-[9px]">{value}</strong>
     </div>
   );
 }
