@@ -15,7 +15,7 @@ export function ProductCard({ product, onOpen, onQuickAdd }: ProductCardProps) {
         <button className="absolute inset-0 block h-full w-full p-0 text-left focus-visible:outline-offset-[-5px]" onClick={onOpen} aria-label={`View ${product.name}`}>
           <ProductImage product={product} className="transition-transform duration-[650ms] ease-[cubic-bezier(.2,.65,.3,1)] group-hover:scale-[1.07]" />
         </button>
-        <button className="absolute bottom-[9px] right-[9px] z-[2] grid size-9 place-items-center rounded-full bg-[#f7f7f0] transition-[background,box-shadow] duration-200 group-hover:bg-[#b7ff00] hover:bg-[#b7ff00] hover:shadow-[0_0_0_5px_#b7ff0026] min-[601px]:bottom-3 min-[601px]:right-3 min-[601px]:size-[33px] [&>svg]:size-[15px] min-[601px]:[&>svg]:size-[17px]" aria-label={product.category === "Apparel" ? `Choose size for ${product.name}` : `Add ${product.name} to bag`} onClick={event => onQuickAdd(event.currentTarget.parentElement)}>
+        <button className="absolute bottom-[9px] right-[9px] z-[2] grid size-9 place-items-center rounded-full bg-[#f7f7f0] transition-[background,box-shadow] duration-200 group-hover:bg-[#b7ff00] hover:bg-[#b7ff00] hover:shadow-[0_0_0_5px_#b7ff0026] min-[601px]:bottom-3 min-[601px]:right-3 min-[601px]:size-[33px] [&>svg]:size-[15px] min-[601px]:[&>svg]:size-[17px]" aria-label={`Add ${product.name} to bag`} onClick={event => onQuickAdd(event.currentTarget.parentElement)}>
           <Icon name="plus" />
         </button>
       </div>

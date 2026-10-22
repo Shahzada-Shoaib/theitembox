@@ -25,35 +25,21 @@ export function HeroSection({ products, bagCount, bagButtonRef, onOpenProduct, o
   const [showHeader, setShowHeader] = useState(false);
 
   useEffect(() => {
-    let frame = 0;
-    const updateHeader = () => {
-      frame = 0;
-      setShowHeader(window.scrollY > 24);
-    };
-    const requestUpdate = () => {
-      if (!frame) frame = requestAnimationFrame(updateHeader);
-    };
-
-    requestUpdate();
-    window.addEventListener("scroll", requestUpdate, { passive: true });
-    return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener("scroll", requestUpdate);
-    };
-  }, []);
-
-  useEffect(() => {
     const story = storyRef.current;
     if (!story) return;
-    let frame = 0;
 
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      frame = requestAnimationFrame(() => setProgress(1));
-      return () => cancelAnimationFrame(frame);
-    }
+    let frame = 0;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     const update = () => {
       frame = 0;
+      setShowHeader(window.scrollY > 24);
+
+      if (reducedMotion) {
+        setProgress(1);
+        return;
+      }
+
       const distance = Math.max(1, story.offsetHeight - window.innerHeight);
       setProgress(clamp(-story.getBoundingClientRect().top / distance));
     };
@@ -61,13 +47,18 @@ export function HeroSection({ products, bagCount, bagButtonRef, onOpenProduct, o
       if (!frame) frame = requestAnimationFrame(update);
     };
 
+    update();
     requestUpdate();
     window.addEventListener("scroll", requestUpdate, { passive: true });
     window.addEventListener("resize", requestUpdate);
+    window.addEventListener("load", requestUpdate);
+    window.addEventListener("pageshow", requestUpdate);
     return () => {
       cancelAnimationFrame(frame);
       window.removeEventListener("scroll", requestUpdate);
       window.removeEventListener("resize", requestUpdate);
+      window.removeEventListener("load", requestUpdate);
+      window.removeEventListener("pageshow", requestUpdate);
     };
   }, []);
 

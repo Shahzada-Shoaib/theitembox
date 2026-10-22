@@ -1,4 +1,6 @@
-import type { RefObject } from "react";
+"use client";
+
+import { useState, type RefObject } from "react";
 import { Brand, Icon } from "./brand";
 import { ProductImage } from "./product-image";
 import { formatPrice, products, type BagItem, type Product } from "./products";
@@ -38,7 +40,7 @@ export function ShopDialog({ dialogRef, panel, selected, query, bag, bagCount, s
     >
       <div className="relative">
         <IconButton label="Close dialog" icon="close" className={`absolute right-[15px] top-[15px] z-[5] rounded-full ${selected ? "border border-[#c9c9c1] bg-[#f7f7f3]/90 text-[#171914] shadow-[0_8px_24px_#34352f14] backdrop-blur-md hover:bg-white" : "border border-[#4c5240] bg-[#141710]"}`} onClick={onClose} />
-        {selected && <ProductDetails product={selected} />}
+        {selected && <ProductDetails key={selected.id} product={selected} />}
         {panel === "search" && <SearchPanel query={query} results={searchResults} onQueryChange={onQueryChange} onOpenProduct={onOpenProduct} />}
         {panel === "bag" && <BagPanel bag={bag} bagCount={bagCount} subtotal={subtotal} onClose={onClose} onQuantityChange={onQuantityChange} />}
         {panel === "menu" && (
@@ -58,39 +60,46 @@ type ProductDetailsProps = {
 };
 
 function ProductDetails({ product }: ProductDetailsProps) {
-  return (
-    <div className="product-detail-surface h-[620px] w-full text-[#171914] max-[600px]:h-[680px]">
-      <div className="detail-image relative h-full overflow-hidden">
-        <div className="absolute left-9 top-8 z-[1] text-[#0b0d08] opacity-90 [&_.brand]:w-[150px] max-[600px]:left-5 max-[600px]:top-5 max-[600px]:[&_.brand]:w-[105px]"><Brand compact /></div>
-        <span className="absolute left-10 top-[98px] z-[1] text-[7px] font-semibold tracking-[2.2px] text-[#26320f] max-[600px]:left-5 max-[600px]:top-[73px] max-[600px]:text-[6px]">THE EVERYDAY EDIT / 2026</span>
-
-        <div className="absolute bottom-3 left-1/2 z-[2] h-[91%] w-[48%] -translate-x-1/2 drop-shadow-[0_30px_35px_#0005] max-[600px]:bottom-auto max-[600px]:top-[85px] max-[600px]:h-[250px] max-[600px]:w-[72%]">
-          <ProductImage product={product} />
-        </div>
-
-        <div className="absolute right-10 top-10 z-[3] w-[38%] max-[600px]:left-5 max-[600px]:right-auto max-[600px]:top-[52%] max-[600px]:w-[80%]">
-          <span className="text-[7px] font-semibold tracking-[2px] text-[#59604f]">{product.tag}</span>
-          <h2 className="mt-2 max-w-[300px] text-[30px] font-semibold leading-[1.02] tracking-[-1.4px] max-[600px]:text-[22px]">{product.name}</h2>
-        </div>
-
-        <DetailChip side="right" label="PRICE" value={formatPrice(product.price)} className="right-[18%] top-[155px] max-[600px]:right-3 max-[600px]:top-[112px]" lineClassName="w-[92px] max-[600px]:w-6" />
-        <DetailChip side="left" label="COLOR" value={product.color} className="left-[18%] top-[244px] max-[600px]:left-3 max-[600px]:top-[188px]" lineClassName="w-[110px] max-[600px]:w-6" />
-        <DetailChip side="right" label="FIT" value="Relaxed" className="right-[18%] top-[333px] max-[600px]:right-3 max-[600px]:top-[264px]" lineClassName="w-[76px] max-[600px]:w-6" />
-        <DetailChip side="left" label="TYPE" value={product.category} className="left-[18%] top-[420px] max-[600px]:left-3 max-[600px]:top-[112px]" lineClassName="w-[82px] max-[600px]:w-6" />
-      </div>
-    </div>
-  );
-}
-
-function DetailChip({ side, label, value, className, lineClassName }: { side: "left" | "right"; label: string; value: string; className: string; lineClassName: string }) {
-  const lineColor = "bg-[#777b70]/55";
-  const dotColor = "bg-[#52574c]";
+  const [activeImage, setActiveImage] = useState(product.image);
 
   return (
-    <div className={`absolute z-[4] min-w-[128px] border border-white/80 bg-[#f8f8f4]/88 px-3 py-2.5 shadow-[0_12px_32px_#36372f1a] backdrop-blur-md max-[600px]:min-w-[104px] max-[600px]:px-2.5 max-[600px]:py-2 ${className}`}>
-      <span className={`absolute top-1/2 h-px ${lineColor} ${side === "right" ? "right-full" : "left-full"} ${lineClassName}`}><span className={`absolute -top-0.5 size-[5px] rounded-full ${dotColor} ${side === "right" ? "-left-0.5" : "-right-0.5"}`} /></span>
-      <span className="block text-[6px] tracking-[1.6px] text-[#777b70]">{label}</span>
-      <strong className="mt-1 block text-[10px] font-medium text-[#22241f] max-[600px]:text-[9px]">{value}</strong>
+    <div className="product-detail-surface w-full text-[#171914]">
+      <section className="detail-gallery" aria-label={`${product.name} image gallery`}>
+        <div className="detail-brand"><Brand compact /><span>{product.collection} / 2026</span></div>
+        <div className="detail-active-image">
+          <ProductImage product={product} image={activeImage} sizes="(max-width: 600px) 92vw, 620px" />
+        </div>
+        <div className="detail-thumbnails" role="group" aria-label="Choose product image">
+          {product.gallery.map((image, index) => (
+            <button
+              type="button"
+              key={image}
+              className={activeImage === image ? "is-active" : ""}
+              onClick={() => setActiveImage(image)}
+              aria-label={`Show image ${index + 1} of ${product.gallery.length}`}
+              aria-pressed={activeImage === image}
+            >
+              <ProductImage product={product} image={image} alt="" sizes="64px" />
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <aside className="detail-copy">
+        <span className="detail-tag">{product.tag}</span>
+        <h2>{product.name}</h2>
+        <p>{product.description}</p>
+        <strong className="detail-price">{formatPrice(product.price)}</strong>
+        <dl>
+          <div><dt>COLOR</dt><dd>{product.color}</dd></div>
+          <div><dt>FIT</dt><dd>{product.fit}</dd></div>
+          <div><dt>TYPE</dt><dd>{product.category}</dd></div>
+        </dl>
+        <div className="detail-sizes" aria-label="Available sizes">
+          <span>AVAILABLE SIZES</span>
+          <div>{product.sizes.map(size => <span key={size}>{size}</span>)}</div>
+        </div>
+      </aside>
     </div>
   );
 }

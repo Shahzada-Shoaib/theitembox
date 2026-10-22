@@ -1,36 +1,13 @@
-import Image from "next/image";
 import { Icon } from "./brand";
+import { ProductImage } from "./product-image";
 import type { Product } from "./products";
 
 type LookbookSectionProps = {
-  primary: Product;
-  secondary: Product;
-  tertiary: Product;
+  products: readonly Product[];
   onOpenProduct: (product: Product) => void;
 };
 
-const looks = [
-  {
-    image: "/lookbook/player-fit-pc-gamers.png",
-    alt: "Model styling the black PC Gamers Tee in a concrete night setting",
-  },
-  {
-    image: "/lookbook/player-fit-girl-gamer.png",
-    alt: "Model styling the dusty-pink Girl Gamer Hoodie in a gaming lounge",
-  },
-  {
-    image: "/lookbook/player-fit-free-fire.png",
-    alt: "Model styling the red, white, and black Free Fire Hoodie in a moody stairwell",
-  },
-] as const;
-
-export function LookbookSection({ primary, secondary, tertiary, onOpenProduct }: LookbookSectionProps) {
-  const entries = [
-    { ...looks[0], product: primary },
-    { ...looks[1], product: secondary },
-    { ...looks[2], product: tertiary },
-  ];
-
+export function LookbookSection({ products, onOpenProduct }: LookbookSectionProps) {
   return (
     <section className="lookbook-section" aria-labelledby="lookbook-title">
       <header className="lookbook-header">
@@ -38,15 +15,16 @@ export function LookbookSection({ primary, secondary, tertiary, onOpenProduct }:
       </header>
 
       <div className="lookbook-grid" aria-label="Player fit lookbook">
-        {entries.map((entry, index) => (
-          <article className={`lookbook-card ${index === 0 ? "is-primary" : "is-secondary"}`} key={entry.product.id}>
-            <button type="button" className="lookbook-frame" onClick={() => onOpenProduct(entry.product)} aria-label={`View ${entry.product.name}`}>
-              <Image
-                src={entry.image}
-                alt={entry.alt}
-                fill
+        {products.map((product, index) => (
+          <article className={`lookbook-card ${index === 0 ? "is-primary" : "is-secondary"}`} key={product.id}>
+            <button type="button" className="lookbook-frame" onClick={() => onOpenProduct(product)} aria-label={`View ${product.name}`}>
+              <ProductImage
+                product={product}
+                image={product.gallery[1] ?? product.image}
+                alt={`${product.name} campaign view`}
                 sizes={index === 0 ? "(max-width: 600px) 84vw, 58vw" : "(max-width: 600px) 84vw, 34vw"}
-                className="object-cover"
+                fit="cover"
+                unoptimized={false}
               />
               <span className="lookbook-action" aria-hidden="true"><Icon name="arrow" /></span>
             </button>

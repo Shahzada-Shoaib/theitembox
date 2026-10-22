@@ -75,7 +75,7 @@ export function TeeSlider({ products, onOpenProduct }: TeeSliderProps) {
     <section className="tee-queue relative overflow-hidden bg-[#f2f2ed] py-[clamp(27px,3vw,42px)]" aria-label="Featured graphic tees">
       <div className="tee-queue-track">
         {[0, 1].map(group => (
-          <div className="flex min-w-[100vw] flex-none justify-around gap-[clamp(14px,2vw,30px)] px-[clamp(7px,1vw,15px)]" key={group}>
+          <div className="flex min-w-[100vw] flex-none items-center justify-around gap-[clamp(2px,.45vw,8px)] px-[clamp(2px,.4vw,7px)]" key={group}>
             {products.map(product => {
               const key = `${group}-${product.id}`;
               return (
