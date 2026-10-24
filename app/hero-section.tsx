@@ -76,12 +76,12 @@ export function HeroSection({ products, bagCount, bagButtonRef, onOpenProduct, o
   return (
     <section ref={storyRef} id="top" aria-label="The Item Box interactive collection" className="relative h-[220svh] min-h-[220svh] motion-reduce:h-screen motion-reduce:min-h-screen">
       <div className="sticky top-0 isolate h-[100svh] min-h-[620px] overflow-hidden bg-[#f2f2ed] motion-reduce:relative max-[600px]:min-h-0">
-        {/* <video className="absolute inset-0 block size-full origin-center scale-[1.33] object-cover object-center max-[600px]:object-[58%_50%]" autoPlay loop muted playsInline preload="auto" aria-hidden="true">
+        <video className="absolute inset-0 block size-full origin-center scale-[1.33] object-cover object-center max-[600px]:object-[58%_50%]" autoPlay loop muted playsInline preload="auto" poster="/home-poster.webp" aria-hidden="true">
           <source src="/home.mp4" type="video/mp4" />
-        </video> */}
+        </video>
         <h1 className="sr-only">The Item Box — The collection film</h1>
         <SiteHeader visible={showHeader} bagCount={bagCount} bagButtonRef={bagButtonRef} productCount={products.length} onOpenBag={onOpenBag} onOpenMenu={onOpenMenu} onOpenSearch={onOpenSearch} />
-        <div className="pointer-events-none absolute inset-0" aria-label="Featured products">
+        <div className="pointer-events-none absolute inset-0" role="group" aria-label="Featured products">
           <svg className="absolute pointer-events-none" width="0" height="0" aria-hidden="true" focusable="false">
             <defs>
               {products.slice(0, 4).map((product, index) => (
@@ -106,7 +106,7 @@ export function HeroSection({ products, bagCount, bagButtonRef, onOpenProduct, o
               tabIndex={progress > entryStarts[index] + 0.11 ? 0 : -1}
               aria-label={`View ${product.name}`}
             >
-              <ProductImage product={product} priority={index < 2} />
+              <ProductImage product={product} />
             </button>
           ))}
         </div>

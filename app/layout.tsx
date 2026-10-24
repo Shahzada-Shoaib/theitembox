@@ -24,6 +24,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <link rel="preload" href="/home-poster.webp" as="image" type="image/webp" fetchPriority="high" />
+      </head>
       <body suppressHydrationWarning>{children}</body>
     </html>
   );
