@@ -135,6 +135,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
   .detail-brand .brand { width: 100px; }
   .detail-brand > span { margin-top: 9px; font-size: 6px; }
   .detail-active-image { inset: 138px 2px 126px; }
+  .detail-active-image { touch-action: pan-y; }
   .detail-thumbnails { right: 18px; bottom: 16px; left: 18px; gap: 9px; }
   .detail-thumbnails button { width: 48px; height: 48px; }
   .detail-copy { padding: 42px 24px 36px; }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type RefObject } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { Brand, Icon } from "./brand";
 import { ProductImage } from "./product-image";
 import { formatPrice, products, type BagItem, type Product } from "./products";
@@ -61,17 +61,80 @@ type ProductDetailsProps = {
 
 function ProductDetails({ product }: ProductDetailsProps) {
   const [activeImage, setActiveImage] = useState(product.image);
+  const [zoom, setZoom] = useState(1);
+  const [zoomOrigin, setZoomOrigin] = useState("50% 50%");
+  const [pinching, setPinching] = useState(false);
+  const imageRef = useRef<HTMLDivElement>(null);
+  const zoomRef = useRef(1);
+  const gestureRef = useRef({ distance: 0, zoom: 1 });
+
+  useEffect(() => {
+    const image = imageRef.current;
+    if (!image) return;
+
+    const distanceBetween = (touches: TouchList) => Math.hypot(
+      touches[1].clientX - touches[0].clientX,
+      touches[1].clientY - touches[0].clientY,
+    );
+
+    const startPinch = (event: TouchEvent) => {
+      if (event.touches.length !== 2 || !window.matchMedia("(max-width: 600px)").matches) return;
+      const bounds = image.getBoundingClientRect();
+      const midpointX = (event.touches[0].clientX + event.touches[1].clientX) / 2;
+      const midpointY = (event.touches[0].clientY + event.touches[1].clientY) / 2;
+      setZoomOrigin(`${((midpointX - bounds.left) / bounds.width) * 100}% ${((midpointY - bounds.top) / bounds.height) * 100}%`);
+      gestureRef.current = { distance: distanceBetween(event.touches), zoom: zoomRef.current };
+      setPinching(true);
+    };
+
+    const movePinch = (event: TouchEvent) => {
+      if (event.touches.length !== 2 || !gestureRef.current.distance) return;
+      event.preventDefault();
+      const nextZoom = Math.min(2.5, Math.max(1, gestureRef.current.zoom * distanceBetween(event.touches) / gestureRef.current.distance));
+      zoomRef.current = nextZoom;
+      setZoom(nextZoom);
+    };
+
+    const endPinch = (event: TouchEvent) => {
+      if (event.touches.length >= 2) return;
+      gestureRef.current.distance = 0;
+      setPinching(false);
+    };
+
+    image.addEventListener("touchstart", startPinch, { passive: true });
+    image.addEventListener("touchmove", movePinch, { passive: false });
+    image.addEventListener("touchend", endPinch, { passive: true });
+    image.addEventListener("touchcancel", endPinch, { passive: true });
+    return () => {
+      image.removeEventListener("touchstart", startPinch);
+      image.removeEventListener("touchmove", movePinch);
+      image.removeEventListener("touchend", endPinch);
+      image.removeEventListener("touchcancel", endPinch);
+    };
+  }, []);
+
+  function selectImage(image: string) {
+    zoomRef.current = 1;
+    gestureRef.current.distance = 0;
+    setZoom(1);
+    setZoomOrigin("50% 50%");
+    setPinching(false);
+    setActiveImage(image);
+  }
+
+  const baseScale = activeImage === product.image ? 1.32 : 1;
 
   return (
     <div className="product-detail-surface w-full text-[#171914]">
       <section className="detail-gallery" aria-label={`${product.name} image gallery`}>
         <div className="detail-brand"><Brand compact /><span>{product.collection} / 2026</span></div>
-        <div className="detail-active-image">
+        <div ref={imageRef} className="detail-active-image">
           <ProductImage
             product={product}
             image={activeImage}
             sizes="(max-width: 600px) 92vw, 620px"
-            className={`transition-transform duration-300 ${activeImage === product.image ? "scale-[1.32]" : "scale-100"}`}
+            className={`transition-transform ${pinching ? "duration-0" : "duration-300"}`}
+            style={{ transform: `scale(${baseScale * zoom})`, transformOrigin: zoomOrigin }}
           />
         </div>
         <div className="detail-thumbnails" role="group" aria-label="Choose product image">
@@ -80,7 +143,7 @@ function ProductDetails({ product }: ProductDetailsProps) {
               type="button"
               key={image}
               className={activeImage === image ? "is-active" : ""}
-              onClick={() => setActiveImage(image)}
+              onClick={() => selectImage(image)}
               aria-label={`Show image ${index + 1} of ${product.gallery.length}`}
               aria-pressed={activeImage === image}
             >
