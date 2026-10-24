@@ -20,9 +20,9 @@ export function ProductCard({ product, onOpen, onQuickAdd }: ProductCardProps) {
         </button>
       </div>
       <button className="block w-full p-0 text-left" onClick={onOpen}>
-        <span className="mt-3 flex items-end justify-between gap-3 min-[601px]:mt-[17px]">
-          <span className="block text-[13px] font-semibold leading-[1.2] tracking-[-.3px] min-[601px]:text-sm">{product.name}</span>
-          <span className="mb-px inline-block whitespace-nowrap text-[11px] text-[#62675b]">{formatPrice(product.price)}</span>
+        <span className="mt-3.5 flex items-start justify-between gap-4 min-[601px]:mt-5">
+          <span className="block text-[13px] font-semibold leading-[1.35] tracking-[-.25px] min-[601px]:text-[15px]">{product.name}</span>
+          <span className="mt-0.5 inline-block whitespace-nowrap text-[11px] leading-[1.35] text-[#62675b] min-[601px]:text-xs">{formatPrice(product.price)}</span>
         </span>
       </button>
     </article>

@@ -13,11 +13,11 @@ export function CollectionSection({ products, filter, onFilterChange, onOpenProd
   const filtered = products.filter(product => filter === "All items" || product.category === filter);
 
   return (
-    <section className="bg-[#f2f2ed] px-[6.5%] pb-[85px] pt-[90px] text-[#141510] max-[900px]:px-[6%] max-[900px]:py-[65px] max-[600px]:px-[6%] max-[600px]:pb-11 max-[600px]:pt-12" id="collection">
-      <div className="mb-[44px] flex items-end justify-between max-[600px]:mb-8">
-        <h2 className="m-0 text-[clamp(44px,5.2vw,76px)] font-black leading-none tracking-[-3.8px] max-[600px]:text-[clamp(34px,11.5vw,44px)] max-[600px]:tracking-[-2.2px]">YOUR NEXT<br /><span className="text-[#898b81]">GOOD FIND.</span></h2>
+    <section className="bg-[#f2f2ed] px-[6.5%] py-[clamp(88px,8vw,120px)] text-[#141510] max-[900px]:px-[6%] max-[600px]:py-16" id="collection">
+      <div className="mb-[clamp(44px,4.2vw,62px)] flex items-end justify-between max-[600px]:mb-9">
+        <h2 className="m-0 text-[clamp(46px,5.4vw,80px)] font-black leading-[.94] tracking-[-3.8px] max-[600px]:text-[clamp(36px,11.5vw,46px)] max-[600px]:tracking-[-2.2px]">YOUR NEXT<br /><span className="text-[#898b81]">GOOD FIND.</span></h2>
       </div>
-      <div className="flex items-center border-t border-[#d6d7cc] pb-[28px] pt-[21px] max-[600px]:pb-[22px] max-[600px]:pt-4">
+      <div className="flex items-center border-t border-[#d6d7cc] pb-9 pt-6 max-[600px]:pb-7 max-[600px]:pt-5">
         <div className="flex gap-2 max-[600px]:w-full max-[600px]:justify-between max-[600px]:gap-0.5" aria-label="Filter collection">
           {["All items", "Apparel"].map(category => {
             const active = filter === category;
@@ -29,7 +29,7 @@ export function CollectionSection({ products, filter, onFilterChange, onOpenProd
           })}
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-x-[13px] gap-y-[26px] min-[601px]:gap-x-5 min-[601px]:gap-y-8 min-[901px]:grid-cols-4 min-[901px]:gap-[15px] min-[1101px]:gap-[23px]">
+      <div className="grid grid-cols-2 gap-x-3.5 gap-y-8 min-[601px]:gap-x-6 min-[601px]:gap-y-11 min-[901px]:grid-cols-4 min-[901px]:gap-x-6 min-[901px]:gap-y-12">
         {filtered.map(product => (
           <ProductCard
             key={product.id}

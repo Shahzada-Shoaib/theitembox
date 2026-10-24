@@ -24,7 +24,7 @@ type ShopDialogProps = {
   onQuantityChange: (id: Product["id"], size: string, delta: number) => void;
 };
 
-const panelClass = "px-[34px] pb-[35px] pt-[47px] max-[600px]:px-[18px] max-[600px]:pb-[22px] max-[600px]:pt-[58px]";
+const panelClass = "px-10 pb-11 pt-14 max-[600px]:px-[22px] max-[600px]:pb-7 max-[600px]:pt-[62px]";
 const eyebrowClass = "flex items-center gap-[11px] text-[8px] font-medium tracking-[2.3px] text-[#b7ff00] max-[600px]:text-[7px] max-[600px]:tracking-[1.6px]";
 
 export function ShopDialog({ dialogRef, panel, selected, query, bag, bagCount, subtotal, searchResults, onClose, onOpenProduct, onPanelChange, onQueryChange, onQuantityChange }: ShopDialogProps) {
@@ -67,7 +67,12 @@ function ProductDetails({ product }: ProductDetailsProps) {
       <section className="detail-gallery" aria-label={`${product.name} image gallery`}>
         <div className="detail-brand"><Brand compact /><span>{product.collection} / 2026</span></div>
         <div className="detail-active-image">
-          <ProductImage product={product} image={activeImage} sizes="(max-width: 600px) 92vw, 620px" />
+          <ProductImage
+            product={product}
+            image={activeImage}
+            sizes="(max-width: 600px) 92vw, 620px"
+            className={`transition-transform duration-300 ${activeImage === product.image ? "scale-[1.32]" : "scale-100"}`}
+          />
         </div>
         <div className="detail-thumbnails" role="group" aria-label="Choose product image">
           {product.gallery.map((image, index) => (
@@ -108,14 +113,14 @@ function SearchPanel({ query, results, onQueryChange, onOpenProduct }: { query: 
   return (
     <div className={panelClass}>
       <span className={eyebrowClass}>SOMETHING GOOD IS IN HERE.</span>
-      <h2 className="mb-[27px] mt-[18px] text-[37px] font-semibold leading-[1.1] tracking-[-1.5px] max-[600px]:text-[32px]">Find your thing.</h2>
-      <div className="flex items-center gap-3 border-b border-[#6a7853] py-3.5 focus-within:border-[#b7ff00]">
+      <h2 className="mb-8 mt-5 text-[40px] font-semibold leading-[1.08] tracking-[-1.7px] max-[600px]:mb-7 max-[600px]:text-[32px]">Find your thing.</h2>
+      <div className="flex items-center gap-3.5 border-b border-[#6a7853] py-4 focus-within:border-[#b7ff00]">
         <Icon name="search" />
         <input autoFocus className="min-w-0 w-full border-0 bg-transparent text-xs text-[#f5f5ef] outline-none placeholder:text-[#79866b] max-[600px]:text-base" type="search" placeholder="Headphones, frames, your next favourite…" value={query} onChange={event => onQueryChange(event.target.value)} aria-label="Search products" />
       </div>
       <div className="mt-4">
         {results.length ? results.map(product => (
-          <button type="button" key={product.id} className="flex w-full items-center gap-[17px] border-b border-white/[.075] py-[13px] text-left hover:text-[#b7ff00]" onClick={() => onOpenProduct(product)}>
+          <button type="button" key={product.id} className="flex w-full items-center gap-5 border-b border-white/[.075] py-4 text-left hover:text-[#b7ff00] max-[600px]:gap-4" onClick={() => onOpenProduct(product)}>
             <span className="relative block h-[78px] w-[75px] shrink-0 overflow-hidden"><ProductImage product={product} /></span>
             <span><strong className="block text-[13px] font-medium">{product.name}</strong><small className="mt-[7px] block text-[10px] text-[#8c9980]">{product.category} · {formatPrice(product.price)}</small></span>
             <Icon name="arrow" className="ml-auto w-4" />
@@ -130,7 +135,7 @@ function BagPanel({ bag, bagCount, subtotal, onClose, onQuantityChange }: { bag:
   return (
     <div className={panelClass}>
       <span className={eyebrowClass}>EXCELLENT TASTE.</span>
-      <h2 className="mb-[27px] mt-[18px] text-[37px] font-semibold leading-[1.1] tracking-[-1.5px] max-[600px]:text-[32px]">Your bag. <span className="text-[#7e896e]">({bagCount})</span></h2>
+      <h2 className="mb-8 mt-5 text-[40px] font-semibold leading-[1.08] tracking-[-1.7px] max-[600px]:mb-7 max-[600px]:text-[32px]">Your bag. <span className="text-[#7e896e]">({bagCount})</span></h2>
       {bag.length ? <>
         <div>{bag.map(item => {
           const product = products.find(entry => entry.id === item.id)!;
