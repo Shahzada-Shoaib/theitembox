@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState, type CSSProperties, type RefObject } from "react";
 import { ProductImage } from "./product-image";
 import type { Product } from "./products";
@@ -23,6 +24,7 @@ export function HeroSection({ products, bagCount, bagButtonRef, onOpenProduct, o
   const storyRef = useRef<HTMLElement>(null);
   const [progress, setProgress] = useState(0);
   const [showHeader, setShowHeader] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
 
   useEffect(() => {
     const story = storyRef.current;
@@ -76,7 +78,26 @@ export function HeroSection({ products, bagCount, bagButtonRef, onOpenProduct, o
   return (
     <section ref={storyRef} id="top" aria-label="The Item Box interactive collection" className="relative h-[220svh] min-h-[220svh] motion-reduce:h-screen motion-reduce:min-h-screen">
       <div className="sticky top-0 isolate h-[100svh] min-h-[620px] overflow-hidden bg-[#f2f2ed] motion-reduce:relative max-[600px]:min-h-0">
-        <video className="absolute inset-0 block size-full origin-center scale-[1.33] object-cover object-center max-[600px]:object-[58%_50%]" autoPlay loop muted playsInline preload="auto" poster="/home-poster.webp" aria-hidden="true">
+        <Image
+          src="/home-poster.webp"
+          alt=""
+          fill
+          preload
+          sizes="100vw"
+          className="origin-center scale-[1.33] object-cover object-center max-[600px]:object-[58%_50%]"
+          aria-hidden="true"
+        />
+        <video
+          className={`absolute inset-0 block size-full origin-center scale-[1.33] object-cover object-center transition-opacity duration-500 max-[600px]:object-[58%_50%] ${videoReady ? "opacity-100" : "opacity-0"}`}
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+          poster="/home-poster.webp"
+          aria-hidden="true"
+          onCanPlay={() => setVideoReady(true)}
+        >
           <source src="/home.mp4" type="video/mp4" />
         </video>
         <h1 className="sr-only">The Item Box — The collection film</h1>
