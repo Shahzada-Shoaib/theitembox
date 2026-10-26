@@ -21,7 +21,6 @@ export default function Storefront() {
   const [panel, setPanel] = useState<Panel>(null);
   const [selected, setSelected] = useState<Product | null>(null);
   const [size, setSize] = useState("M");
-  const [filter, setFilter] = useState("All items");
   const [query, setQuery] = useState("");
   const [bag, setBag] = useBag();
   const [toast, setToast] = useState("");
@@ -136,10 +135,10 @@ export default function Storefront() {
   return <>
     <a className="fixed left-5 -top-[70px] z-[100] bg-[#b7ff00] px-[25px] py-[15px] text-[#0b0b0b] focus:top-3" href="#collection">Skip to collection</a>
     <main>
-      <HeroSection products={heroProducts} bagCount={bagCount} bagButtonRef={headerBagRef} onOpenProduct={openProduct} onOpenBag={() => openPanel("bag")} onOpenMenu={() => openPanel("menu")} onOpenSearch={() => { setQuery(""); openPanel("search"); }} />
+      <HeroSection products={heroProducts} bagCount={bagCount} bagButtonRef={headerBagRef} onOpenBag={() => openPanel("bag")} onOpenMenu={() => openPanel("menu")} onOpenSearch={() => { setQuery(""); openPanel("search"); }} />
       <TeeSlider products={sliderProducts} onOpenProduct={openProduct} />
       <ProductReel products={reelProducts} onOpenProduct={openProduct} />
-      <CollectionSection products={collectionProducts} filter={filter} onFilterChange={setFilter} onOpenProduct={openProduct} onQuickAdd={addToBag} />
+      <CollectionSection products={collectionProducts} onOpenProduct={openProduct} onQuickAdd={addToBag} />
       <LookbookSection products={lookbookProducts} onOpenProduct={openProduct} />
       <SiteFooter />
     </main>

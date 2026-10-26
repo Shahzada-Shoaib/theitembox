@@ -7,28 +7,26 @@ type LookbookSectionProps = {
   onOpenProduct: (product: Product) => void;
 };
 
+const campaignImages = [
+  "/lookbook/player-fit-pc-gamers.png",
+  "/lookbook/player-fit-girl-gamer.png",
+  "/lookbook/player-fit-free-fire.png",
+] as const;
+
 export function LookbookSection({ products, onOpenProduct }: LookbookSectionProps) {
   return (
-    <section className="lookbook-section" aria-labelledby="lookbook-title">
-      <header className="lookbook-header">
-        <h2 id="lookbook-title">WORN BY<br /><em>PLAYERS.</em></h2>
-      </header>
-
+    <section id="lookbook" className="lookbook-section" aria-labelledby="lookbook-title">
+      <div className="lookbook-copy">
+        <h2 id="lookbook-title">Worn by<br /><em>players.</em></h2>
+        <p>For the dreamers, the risk takers and the late-night grinders. This is more than a tee. This is your story.</p>
+        <a href="#collection">Explore the drop <Icon name="arrow" /></a>
+      </div>
       <div className="lookbook-grid" aria-label="Player fit lookbook">
         {products.map((product, index) => (
-          <article className={`lookbook-card ${index === 0 ? "is-primary" : "is-secondary"}`} key={product.id}>
-            <button type="button" className="lookbook-frame" onClick={() => onOpenProduct(product)} aria-label={`View ${product.name}`}>
-              <ProductImage
-                product={product}
-                image={product.gallery[1] ?? product.image}
-                alt={`${product.name} campaign view`}
-                sizes={index === 0 ? "(max-width: 600px) 84vw, 58vw" : "(max-width: 600px) 84vw, 34vw"}
-                fit="cover"
-                unoptimized={false}
-              />
-              <span className="lookbook-action" aria-hidden="true"><Icon name="arrow" /></span>
-            </button>
-          </article>
+          <button type="button" className={`lookbook-frame lookbook-frame-${index + 1}`} key={product.id} onClick={() => onOpenProduct(product)} aria-label={`View ${product.name}`}>
+            <ProductImage product={product} image={campaignImages[index] ?? product.gallery[1]} alt={`${product.name} player campaign`} sizes="(max-width: 600px) 88vw, 45vw" fit="cover" />
+            <span className="lookbook-action" aria-hidden="true"><Icon name="arrow" /></span>
+          </button>
         ))}
       </div>
     </section>

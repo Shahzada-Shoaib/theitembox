@@ -1,11 +1,24 @@
-import { Brand } from "./brand";
+import { Brand, Icon } from "./brand";
+
+const notes = [
+  ["Five originals", "One complete drop"],
+  ["Relaxed fits", "Made for daily play"],
+  ["Sizes S–XL", "Find your player fit"],
+  ["The Item Box", "Outside the ordinary"],
+] as const;
 
 export function SiteFooter() {
   return (
-    <footer className="flex items-center justify-center border-t border-white/10 px-[6.5%] py-9 [&_.brand]:w-[96px] max-[600px]:px-[6%] max-[600px]:py-7 max-[600px]:[&_.brand]:w-[78px]">
-      <a href="#top" className="inline-flex" aria-label="The Item Box — back to top">
-        <Brand compact />
-      </a>
+    <footer id="site-footer" className="site-footer">
+      <div className="footer-notes">
+        {notes.map(([title, copy]) => (
+          <div key={title}><Icon name="check" /><span><strong>{title}</strong><small>{copy}</small></span></div>
+        ))}
+      </div>
+      <div className="footer-bottom">
+        <a href="#top" aria-label="The Item Box — back to top"><Brand /></a>
+        <span>Vice City Drop / 2026</span>
+      </div>
     </footer>
   );
 }
