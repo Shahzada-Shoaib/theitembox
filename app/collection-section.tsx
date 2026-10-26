@@ -13,13 +13,13 @@ export function CollectionSection({ products, filter, onFilterChange, onOpenProd
   const filtered = products.filter(product => filter === "All items" || product.category === filter);
 
   return (
-    <section className="bg-[#f2f2ed] px-[6.5%] py-[clamp(88px,8vw,120px)] text-[#141510] max-[900px]:px-[6%] max-[600px]:py-16" id="collection">
-      <div className="mb-[clamp(44px,4.2vw,62px)] flex items-end justify-between max-[600px]:mb-9">
+    <section className="bg-[#f2f2ed] px-[6.5%]  text-[#141510]" id="collection">
+      {/* <div className="mb-[clamp(26px,2.5vw,36px)] flex items-end justify-between max-[600px]:mb-6">
         <h2 className="m-0 text-[clamp(46px,5.4vw,80px)] font-black leading-[.94] tracking-[-3.8px] max-[600px]:text-[clamp(36px,11.5vw,46px)] max-[600px]:tracking-[-2.2px]">YOUR NEXT<br /><span className="text-[#898b81]">GOOD FIND.</span></h2>
-      </div>
-      <div className="flex items-center border-t border-[#d6d7cc] pb-9 pt-6 max-[600px]:pb-7 max-[600px]:pt-5">
+      </div> */}
+      {/* <div className="flex items-center border-[#d6d7cc] pb-8  max-[600px]:pb-6 max-[600px]:pt-3.5">
         <div className="flex gap-2 max-[600px]:w-full max-[600px]:justify-between max-[600px]:gap-0.5" aria-label="Filter collection">
-          {["All items", "Apparel"].map(category => {
+          {["Apparel"].map(category => {
             const active = filter === category;
             return (
               <button type="button" key={category} className={`min-h-10 rounded-[30px] border px-[15px] py-[9px] text-[10px] transition-all hover:border-[#b1b4a5] max-[600px]:px-4 max-[600px]:text-[10px] ${active ? "border-transparent bg-[#1d2118] text-[#f5f5ee]" : "border-transparent text-[#717569]"}`} aria-pressed={active} onClick={() => onFilterChange(category)}>
@@ -28,7 +28,7 @@ export function CollectionSection({ products, filter, onFilterChange, onOpenProd
             );
           })}
         </div>
-      </div>
+      </div> */}
       <div className="grid grid-cols-2 gap-x-3.5 gap-y-8 min-[601px]:gap-x-6 min-[601px]:gap-y-11 min-[901px]:grid-cols-4 min-[901px]:gap-x-6 min-[901px]:gap-y-12">
         {filtered.map(product => (
           <ProductCard
