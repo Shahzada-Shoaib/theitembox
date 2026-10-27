@@ -14,6 +14,8 @@ import { ShopDialog, type Panel } from "./shop-dialog";
 import { TeeSlider } from "./tee-slider";
 import { useBag } from "./use-bag";
 import { useCartFlight } from "./use-cart-flight";
+import { useInertialScroll } from "./use-inertial-scroll";
+import { useMotionPreference } from "./use-motion-preference";
 
 export default function Storefront() {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -28,6 +30,7 @@ export default function Storefront() {
   const [toast, setToast] = useState("");
   const [showFloatingBag, setShowFloatingBag] = useState(false);
   const flyToBag = useCartFlight(false);
+  const [reducedMotion] = useMotionPreference();
 
   useEffect(() => {
     const button = headerBagRef.current;
@@ -44,6 +47,8 @@ export default function Storefront() {
   }, [toast]);
 
   const dialogOpen = Boolean(panel || selected);
+  useInertialScroll(reducedMotion || dialogOpen);
+
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;

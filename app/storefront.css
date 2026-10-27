@@ -80,16 +80,34 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 @keyframes reel-orbit-spin { from { transform: rotateY(0deg); } to { transform: rotateY(360deg); } }
 @keyframes reel-counter-spin { from { transform: rotateY(0deg); } to { transform: rotateY(-360deg); } }
 /* SVG displacement gives the hero garments their subtle cloth movement. */
-.floating-tee { position: absolute; width: clamp(210px,22vw,330px); aspect-ratio: .82; z-index: 5; filter: drop-shadow(0 12px 18px #0002); will-change: transform, opacity; }
-.floating-tee img { will-change: filter; }
+.floating-tee { position: absolute; width: clamp(210px,22vw,330px); aspect-ratio: .82; z-index: 5; padding: 0; border: 0; background: transparent; transform-style: preserve-3d; backface-visibility: hidden; will-change: transform, opacity, filter; }
+.hero-tee-float { position: absolute; inset: 0; display: block; transform-origin: 50% 16%; animation: hero-tee-airborne 5.6s ease-in-out infinite alternate; will-change: transform; }
+.floating-tee img { transform-origin: 50% 18%; animation: hero-tee-fabric 3.8s ease-in-out infinite alternate; will-change: filter, transform; }
 .floating-tee:nth-of-type(1) img { filter: url("#tee-wave-0"); }
-.floating-tee:nth-of-type(2) img { filter: url("#tee-wave-1"); }
-.floating-tee:nth-of-type(3) img { filter: url("#tee-wave-2"); }
-.floating-tee:nth-of-type(4) img { filter: url("#tee-wave-3"); }
+.floating-tee:nth-of-type(2) .hero-tee-float { animation-delay: -1.4s; animation-duration: 6.2s; }
+.floating-tee:nth-of-type(3) .hero-tee-float { animation-delay: -2.8s; animation-duration: 5.9s; }
+.floating-tee:nth-of-type(4) .hero-tee-float { animation-delay: -4.1s; animation-duration: 6.5s; }
+.floating-tee:nth-of-type(2) img { filter: url("#tee-wave-1"); animation-delay: -.9s; animation-duration: 4.2s; }
+.floating-tee:nth-of-type(3) img { filter: url("#tee-wave-2"); animation-delay: -1.8s; animation-duration: 4.6s; }
+.floating-tee:nth-of-type(4) img { filter: url("#tee-wave-3"); animation-delay: -2.7s; animation-duration: 4s; }
 .float-0 { left: 73.5%; top: 25%; }
 .float-1 { left: 62.7%; top: 60%; width: 255px; }
 .float-2 { left: 7%; top: 33%; }
 .float-3 { left: 18.5%; top: 64%; width: 250px; }
+
+@keyframes hero-tee-airborne {
+  0% { transform: translate3d(-5px,4px,0) rotate(-1.5deg); }
+  32% { transform: translate3d(2px,-8px,0) rotate(.7deg); }
+  68% { transform: translate3d(7px,-3px,0) rotate(1.6deg); }
+  100% { transform: translate3d(-2px,-11px,0) rotate(-.8deg); }
+}
+
+@keyframes hero-tee-fabric {
+  0% { transform: translate3d(-2px,1px,0) skewX(-1.2deg) rotate(-.4deg) scaleX(.985); }
+  42% { transform: translate3d(2px,-2px,0) skewX(.8deg) rotate(.3deg) scaleX(1.012); }
+  72% { transform: translate3d(-1px,-4px,0) skewX(-.5deg) rotate(.7deg) scaleX(.994); }
+  100% { transform: translate3d(2px,-6px,0) skewX(1.1deg) rotate(-.2deg) scaleX(1.006); }
+}
 
 /* The cart-flight hook renders these temporary animation elements. */
 .cart-flight-layer { position: fixed; inset: 0; z-index: 1000; width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; overflow: clip; background: transparent; pointer-events: none; }
@@ -193,6 +211,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 }
 
 html[data-motion="reduced"] { scroll-behavior: auto; }
+html[data-inertial-scroll="true"] { scroll-behavior: auto; }
 html[data-motion="reduced"] *, html[data-motion="reduced"] *::before, html[data-motion="reduced"] *::after { animation: none !important; transition: none !important; }
 html[data-motion="reduced"] .floating-tee img { filter: none; }
 html[data-motion="reduced"] .product-reel-stage { display: none; }
@@ -266,9 +285,9 @@ html[data-motion="reduced"] .product-reel-static small { margin-top: 5px; color:
 /* Campaign storefront: compact catalog rhythm inspired by game-drop retail pages. */
 body { font-family: var(--font-geist-sans), Arial, sans-serif; }
 .campaign-hero { position: relative; background: #050505; color: #fff; }
-.campaign-hero-story { position: relative; height: 220svh; min-height: 1240px; }
-.campaign-hero-sticky { position: sticky; top: 0; display: flex; height: 100svh; min-height: 620px; flex-direction: column; overflow: hidden; background: #050505; }
-.site-header { position: relative; z-index: 20; display: grid; height: 74px; padding: 0 var(--page-gutter); grid-template-columns: 1fr auto 1fr; align-items: center; background: #050505; color: #fff; }
+.campaign-hero-story { position: relative; height: auto; min-height: 0; }
+.campaign-hero-sticky { position: relative; display: flex; height: auto; min-height: 0; flex-direction: column; overflow: hidden; background: #050505; }
+.site-header { position: absolute; top: 0; right: 0; left: 0; z-index: 20; display: grid; height: 74px; padding: 0 var(--page-gutter); grid-template-columns: 1fr auto 1fr; align-items: center; background: transparent; color: #fff; }
 .site-header-brand { display: inline-flex; width: max-content; }
 .site-header-brand .brand { width: 70px; }
 .site-header-nav { display: flex; align-items: center; justify-content: center; gap: clamp(28px,3.5vw,58px); }
@@ -284,11 +303,10 @@ body { font-family: var(--font-geist-sans), Arial, sans-serif; }
 .site-header-count { position: absolute; top: 1px; right: -1px; display: grid; min-width: 16px; height: 16px; padding: 0 4px; place-items: center; border-radius: 20px; background: var(--green); color: #10110d; font-size: 8px; font-weight: 800; }
 .site-header-menu { display: none; }
 .campaign-hero-media { position: relative; height: clamp(430px,46vw,665px); overflow: hidden; background: #160d20; }
-.campaign-hero-sticky .campaign-hero-media { height: auto; min-height: 0; flex: 1; }
-.campaign-hero-media > img, .campaign-hero-video { transform: scale(1.3); }
+.campaign-hero-sticky .campaign-hero-media { height: auto; min-height: 0; flex: none; }
+.campaign-hero-picture { position: relative; display: block; width: 100%; }
+.campaign-hero-banner { display: block; width: 100%; height: auto; object-fit: contain; }
 .campaign-hero-media::after { content: ""; position: absolute; inset: 0; box-shadow: inset 0 -80px 80px -80px #0009; pointer-events: none; }
-.campaign-hero-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; opacity: 0; transition: opacity .5s ease; }
-.campaign-hero-video.is-ready { opacity: 1; }
 
 .arrival-section, .featured-section { padding: 46px var(--page-gutter) 54px; background: var(--page-background); color: #10110e; }
 .store-section-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 26px; }
@@ -371,7 +389,6 @@ body { font-family: var(--font-geist-sans), Arial, sans-serif; }
   .campaign-hero-media { height: clamp(390px,105vw,520px); }
   .campaign-hero-story { min-height: 0; }
   .campaign-hero-sticky { min-height: 0; }
-  .campaign-hero-media img, .campaign-hero-video { object-position: 51% 50%; }
   .arrival-section, .featured-section { padding: 34px var(--page-gutter) 42px; }
   .store-section-header { margin-bottom: 20px; }
   .store-section-header h2 { gap: 7px; font-size: 17px; }
@@ -411,16 +428,14 @@ body { font-family: var(--font-geist-sans), Arial, sans-serif; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .campaign-hero-video { display: none; }
   .campaign-hero-story { height: auto; min-height: 0; }
-  .campaign-hero-sticky { position: relative; height: 100svh; }
+  .campaign-hero-sticky { position: relative; height: auto; }
   html:not([data-motion]) .product-reel-section { display: grid; height: auto; min-height: 450px; padding: 48px var(--page-gutter); grid-template-columns: minmax(220px,.65fr) minmax(0,1.35fr); gap: 40px; align-items: center; }
   html:not([data-motion]) .set-builder-copy { position: static; width: auto; transform: none; }
   html:not([data-motion]) .product-reel-static { gap: 18px; }
 }
-html[data-motion="reduced"] .campaign-hero-video { display: none; }
 html[data-motion="reduced"] .campaign-hero-story { height: auto; min-height: 0; }
-html[data-motion="reduced"] .campaign-hero-sticky { position: relative; height: 100svh; }
+html[data-motion="reduced"] .campaign-hero-sticky { position: relative; height: auto; }
 html[data-motion="reduced"] .product-reel-section { display: grid; height: auto; min-height: 450px; padding: 48px var(--page-gutter); grid-template-columns: minmax(220px,.65fr) minmax(0,1.35fr); gap: 40px; align-items: center; }
 html[data-motion="reduced"] .set-builder-copy { position: static; width: auto; transform: none; }
 html[data-motion="reduced"] .product-reel-static { gap: 18px; }
