@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { Brand, Icon } from "./brand";
 import { ProductImage } from "./product-image";
@@ -28,38 +29,100 @@ const panelClass = "px-10 pb-11 pt-14 max-[600px]:px-[22px] max-[600px]:pb-7 max
 const eyebrowClass = "flex items-center gap-[11px] text-[8px] font-medium tracking-[2.3px] text-[#b7ff00] max-[600px]:text-[7px] max-[600px]:tracking-[1.6px]";
 
 export function ShopDialog({ dialogRef, panel, selected, query, bag, bagCount, subtotal, searchResults, onClose, onOpenProduct, onPanelChange, onQueryChange, onQuantityChange }: ShopDialogProps) {
+  const [closing, setClosing] = useState(false);
+  const [sizeChartPhase, setSizeChartPhase] = useState<"closed" | "open" | "closing">("closed");
+  const closeTimerRef = useRef<number>(0);
+  const sizeChartDialogRef = useRef<HTMLDialogElement>(null);
   const label = selected?.name ?? (panel === "bag" ? "Your shopping bag" : panel === "search" ? "Search collection" : "Navigation menu");
 
+  useEffect(() => () => window.clearTimeout(closeTimerRef.current), []);
+
+  function requestClose() {
+    if (closing) return;
+    setClosing(true);
+    window.clearTimeout(closeTimerRef.current);
+    closeTimerRef.current = window.setTimeout(() => {
+      setClosing(false);
+      onClose();
+    }, 760);
+  }
+
+  function openSizeChart() {
+    const chartDialog = sizeChartDialogRef.current;
+    if (chartDialog && !chartDialog.open) chartDialog.showModal();
+    setSizeChartPhase("open");
+  }
+
+  useEffect(() => {
+    const chartDialog = sizeChartDialogRef.current;
+    if (sizeChartPhase === "closed" && chartDialog?.open) chartDialog.close();
+  }, [sizeChartPhase]);
+
+  useEffect(() => {
+    if (sizeChartPhase === "closed") return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      setSizeChartPhase("closing");
+    };
+    const closeTimer = sizeChartPhase === "closing" ? window.setTimeout(() => setSizeChartPhase("closed"), 1200) : 0;
+    window.addEventListener("keydown", closeOnEscape, true);
+    return () => {
+      window.removeEventListener("keydown", closeOnEscape, true);
+      if (closeTimer) window.clearTimeout(closeTimer);
+    };
+  }, [sizeChartPhase]);
+
   return (
-    <dialog
-      ref={dialogRef}
-      className={`shop-dialog fixed m-auto max-h-[calc(100svh-40px)] overflow-auto border p-0 backdrop:bg-black/70 backdrop:backdrop-blur-lg max-[600px]:max-h-[calc(100svh-16px)] ${selected ? "w-[1000px] max-w-[min(1000px,calc(100vw-32px))] border-[#d5d5ce] bg-[#efefeb] text-[#171914] max-[600px]:max-w-[calc(100vw-16px)]" : "w-[650px] max-w-[min(650px,calc(100vw-32px))] border-[#404438] bg-[#141710] text-[#f6f6ed] max-[600px]:max-w-[calc(100vw-16px)]"}`}
-      onCancel={onClose}
-      onClick={event => { if (event.target === event.currentTarget) onClose(); }}
-      aria-label={label}
-    >
-      <div className="relative">
-        <IconButton label="Close dialog" icon="close" className={`absolute right-[15px] top-[15px] z-[5] rounded-full ${selected ? "border border-[#c9c9c1] bg-[#f7f7f3]/90 text-[#171914] shadow-[0_8px_24px_#34352f14] backdrop-blur-md hover:bg-white" : "border border-[#4c5240] bg-[#141710]"}`} onClick={onClose} />
-        {selected && <ProductDetails key={selected.id} product={selected} />}
-        {panel === "search" && <SearchPanel query={query} results={searchResults} onQueryChange={onQueryChange} onOpenProduct={onOpenProduct} />}
-        {panel === "bag" && <BagPanel bag={bag} bagCount={bagCount} subtotal={subtotal} onClose={onClose} onQuantityChange={onQuantityChange} />}
-        {panel === "menu" && (
-          <nav className={`${panelClass} flex flex-col gap-1.5 [&_.brand]:mb-7`} aria-label="Mobile navigation">
-            <Brand />
-            <a className="flex min-h-14 items-center justify-between border-b border-[#4c573b] py-[15px] text-left text-[clamp(21px,7vw,25px)]" href="#collection" onClick={onClose}>The collection <Icon name="arrow" /></a>
-            <button type="button" className="flex min-h-14 items-center justify-between border-b border-[#4c573b] py-[15px] text-left text-[clamp(21px,7vw,25px)]" onClick={() => onPanelChange("search")}>Search <Icon name="search" /></button>
-          </nav>
+    <>
+      <dialog
+        ref={dialogRef}
+        className={`shop-dialog fixed m-auto max-h-[calc(100svh-40px)] overflow-auto border p-0 backdrop:bg-black/70 backdrop:backdrop-blur-lg max-[600px]:max-h-[calc(100svh-16px)] ${closing ? "is-closing" : ""} ${selected ? "w-[1000px] max-w-[min(1000px,calc(100vw-32px))] border-[#d5d5ce] bg-[#efefeb] text-[#171914] max-[600px]:max-w-[calc(100vw-16px)]" : "w-[650px] max-w-[min(650px,calc(100vw-32px))] border-[#404438] bg-[#141710] text-[#f6f6ed] max-[600px]:max-w-[calc(100vw-16px)]"}`}
+        onCancel={event => { event.preventDefault(); requestClose(); }}
+        onClick={event => { if (event.target === event.currentTarget) requestClose(); }}
+        aria-label={label}
+      >
+        <div className="relative">
+          <IconButton label="Close dialog" icon="close" className={`absolute right-[15px] top-[15px] z-[5] rounded-full ${selected ? "border border-[#c9c9c1] bg-[#f7f7f3]/90 text-[#171914] shadow-[0_8px_24px_#34352f14] backdrop-blur-md hover:bg-white" : "border border-[#4c5240] bg-[#141710]"}`} onClick={requestClose} />
+          {selected && <ProductDetails key={selected.id} product={selected} onOpenSizeChart={openSizeChart} />}
+          {panel === "search" && <SearchPanel query={query} results={searchResults} onQueryChange={onQueryChange} onOpenProduct={onOpenProduct} />}
+          {panel === "bag" && <BagPanel bag={bag} bagCount={bagCount} subtotal={subtotal} onClose={requestClose} onQuantityChange={onQuantityChange} />}
+          {panel === "menu" && (
+            <nav className={`${panelClass} flex flex-col gap-1.5 [&_.brand]:mb-7`} aria-label="Mobile navigation">
+              <Brand />
+              <a className="flex min-h-14 items-center justify-between border-b border-[#4c573b] py-[15px] text-left text-[clamp(21px,7vw,25px)]" href="#collection" onClick={onClose}>The collection <Icon name="arrow" /></a>
+              <button type="button" className="flex min-h-14 items-center justify-between border-b border-[#4c573b] py-[15px] text-left text-[clamp(21px,7vw,25px)]" onClick={() => onPanelChange("search")}>Search <Icon name="search" /></button>
+            </nav>
+          )}
+        </div>
+      </dialog>
+
+      <dialog
+        ref={sizeChartDialogRef}
+        className={`size-chart-dialog ${sizeChartPhase === "closing" ? "is-closing" : ""}`}
+        aria-label="T-shirt size chart"
+        onCancel={event => { event.preventDefault(); setSizeChartPhase("closing"); }}
+      >
+        {sizeChartPhase !== "closed" && (
+          <div className={`size-chart-overlay ${sizeChartPhase === "closing" ? "is-closing" : ""}`} onClick={event => { if (event.target === event.currentTarget) setSizeChartPhase("closing"); }}>
+            <button autoFocus type="button" className="size-chart-close" onClick={() => setSizeChartPhase("closing")} aria-label="Close size chart"><Icon name="close" /></button>
+            <div className="size-chart-card" onAnimationEnd={event => { if (event.target === event.currentTarget && sizeChartPhase === "closing") setSizeChartPhase("closed"); }}>
+              <Image src="/size-chart.svg" alt="Relaxed T-shirt size chart with measurements in inches" width={900} height={980} />
+            </div>
+          </div>
         )}
-      </div>
-    </dialog>
+      </dialog>
+    </>
   );
 }
 
 type ProductDetailsProps = {
   product: Product;
+  onOpenSizeChart: () => void;
 };
 
-function ProductDetails({ product }: ProductDetailsProps) {
+function ProductDetails({ product, onOpenSizeChart }: ProductDetailsProps) {
   const [activeImage, setActiveImage] = useState(product.image);
   const [zoom, setZoom] = useState(1);
   const [zoomOrigin, setZoomOrigin] = useState("50% 50%");
@@ -164,7 +227,10 @@ function ProductDetails({ product }: ProductDetailsProps) {
           <div><dt>TYPE</dt><dd>{product.category}</dd></div>
         </dl>
         <div className="detail-sizes" aria-label="Available sizes">
-          <span>AVAILABLE SIZES</span>
+          <span className="detail-sizes-heading">
+            <span>AVAILABLE SIZES</span>
+            <button type="button" onClick={onOpenSizeChart}>SIZE CHART</button>
+          </span>
           <div>{product.sizes.map(size => <span key={size}>{size}</span>)}</div>
         </div>
       </aside>

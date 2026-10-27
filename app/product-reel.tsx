@@ -45,7 +45,7 @@ export function ProductReel({ products, onOpenProduct }: ProductReelProps) {
                     <span className="product-reel-facing-offset">
                       <span className="product-reel-facing">
                         <span className="product-reel-image">
-                          <ProductImage product={product} sizes="(max-width: 600px) 52vw, 310px" unoptimized={false} />
+                          <ProductImage product={product} sizes="(max-width: 600px) 58vw, 360px" unoptimized={false} />
                         </span>
                       </span>
                     </span>

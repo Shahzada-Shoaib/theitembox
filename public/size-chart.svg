@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="980" viewBox="0 0 900 980" role="img" aria-labelledby="title description">
+  <title id="title">Relaxed T-shirt size chart</title>
+  <desc id="description">Approximate chest, length, and shoulder measurements for sizes small through extra large.</desc>
+  <rect width="900" height="980" fill="#f4f4ef"/>
+  <rect x="34" y="34" width="832" height="912" rx="8" fill="none" stroke="#1a1c17" stroke-width="2"/>
+  <text x="70" y="130" fill="#11130e" font-family="Arial, Helvetica, sans-serif" font-size="68" font-weight="900" letter-spacing="-3">SIZE CHART</text>
+  <text x="72" y="174" fill="#666b5f" font-family="Arial, Helvetica, sans-serif" font-size="20" letter-spacing="2">RELAXED TEE · GARMENT MEASUREMENTS IN INCHES</text>
+
+  <g transform="translate(70 210)">
+    <path d="M90 25 164 0h112l74 25 88 98-65 62-46-48v218H113V137l-46 48-65-62z" fill="#e3e4dc" stroke="#171914" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M164 0c5 45 107 45 112 0" fill="none" stroke="#171914" stroke-width="4"/>
+    <path d="M113 174h214" stroke="#b7ff00" stroke-width="8"/>
+    <path d="M113 160v28M327 160v28" stroke="#11130e" stroke-width="3"/>
+    <text x="172" y="154" fill="#11130e" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" letter-spacing="2">CHEST</text>
+    <path d="M355 0v355" stroke="#b7ff00" stroke-width="8"/>
+    <path d="M341 0h28M341 355h28" stroke="#11130e" stroke-width="3"/>
+    <text x="382" y="184" fill="#11130e" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" letter-spacing="2">LENGTH</text>
+    <text x="0" y="410" fill="#666b5f" font-family="Arial, Helvetica, sans-serif" font-size="18">Measure a favourite tee laid flat. Chest is pit to pit.</text>
+  </g>
+
+  <g transform="translate(70 640)" font-family="Arial, Helvetica, sans-serif">
+    <rect width="760" height="64" fill="#171914"/>
+    <g fill="#f4f4ef" font-size="18" font-weight="700" letter-spacing="2">
+      <text x="24" y="40">SIZE</text><text x="210" y="40">CHEST</text><text x="400" y="40">LENGTH</text><text x="590" y="40">SHOULDER</text>
+    </g>
+    <g fill="#171914" font-size="20">
+      <text x="24" y="104" font-weight="700">S</text><text x="210" y="104">20</text><text x="400" y="104">27</text><text x="590" y="104">18</text>
+      <text x="24" y="158" font-weight="700">M</text><text x="210" y="158">21</text><text x="400" y="158">28</text><text x="590" y="158">19</text>
+      <text x="24" y="212" font-weight="700">L</text><text x="210" y="212">22</text><text x="400" y="212">29</text><text x="590" y="212">20</text>
+      <text x="24" y="266" font-weight="700">XL</text><text x="210" y="266">23</text><text x="400" y="266">30</text><text x="590" y="266">21</text>
+    </g>
+    <g stroke="#c9cbc1"><path d="M0 120h760"/><path d="M0 174h760"/><path d="M0 228h760"/></g>
+  </g>
+  <text x="70" y="930" fill="#777c70" font-family="Arial, Helvetica, sans-serif" font-size="15" letter-spacing="1">APPROXIMATE GUIDE · ALLOW A 0.5 INCH PRODUCTION TOLERANCE</text>
+</svg>
