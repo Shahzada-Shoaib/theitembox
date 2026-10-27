@@ -8,9 +8,9 @@ type LookbookSectionProps = {
 };
 
 const campaignImages = [
-  "/lookbook/player-fit-pc-gamers.png",
-  "/lookbook/player-fit-girl-gamer.png",
-  "/lookbook/player-fit-free-fire.png",
+  "/campaign/men-editorial.png",
+  "/campaign/women-editorial.png",
+  "/campaign/players-editorial.png",
 ] as const;
 
 export function LookbookSection({ products, onOpenProduct }: LookbookSectionProps) {

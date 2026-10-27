@@ -4,8 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import { SiteFooter } from "./site-footer";
 import { Icon } from "./brand";
 import { CollectionSection } from "./collection-section";
+import { GenderSection } from "./gender-section";
 import { HeroSection } from "./hero-section";
 import { LookbookSection } from "./lookbook-section";
+import { PageLoader } from "./page-loader";
 import { collectionProducts, heroProducts, lookbookProducts, products, reelProducts, sliderProducts, type Product } from "./products";
 import { ProductReel } from "./product-reel";
 import { ShopDialog, type Panel } from "./shop-dialog";
@@ -133,11 +135,13 @@ export default function Storefront() {
   const searchResults = products.filter(product => `${product.name} ${product.category} ${product.subtitle}`.toLowerCase().includes(query.toLowerCase()));
 
   return <>
+    <PageLoader />
     <a className="fixed left-5 -top-[70px] z-[100] bg-[#b7ff00] px-[25px] py-[15px] text-[#0b0b0b] focus:top-3" href="#collection">Skip to collection</a>
     <main>
-      <HeroSection products={heroProducts} bagCount={bagCount} bagButtonRef={headerBagRef} onOpenBag={() => openPanel("bag")} onOpenMenu={() => openPanel("menu")} onOpenSearch={() => { setQuery(""); openPanel("search"); }} />
+      <HeroSection products={heroProducts} bagCount={bagCount} bagButtonRef={headerBagRef} onOpenProduct={openProduct} onOpenBag={() => openPanel("bag")} onOpenMenu={() => openPanel("menu")} onOpenSearch={() => { setQuery(""); openPanel("search"); }} />
       <TeeSlider products={sliderProducts} onOpenProduct={openProduct} />
       <ProductReel products={reelProducts} onOpenProduct={openProduct} />
+      <GenderSection />
       <CollectionSection products={collectionProducts} onOpenProduct={openProduct} onQuickAdd={addToBag} />
       <LookbookSection products={lookbookProducts} onOpenProduct={openProduct} />
       <SiteFooter />

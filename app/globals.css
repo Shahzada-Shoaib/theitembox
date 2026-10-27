@@ -1,8 +1,19 @@
 @import "tailwindcss" source(".");
 
+:root {
+  --page-background: #f4f3ee;
+  --background: var(--page-background);
+  --foreground: #11130e;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+}
+html,
+body {
+  min-height: 100%;
+  background-color: var(--page-background);
 }
