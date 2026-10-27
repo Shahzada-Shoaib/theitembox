@@ -9,6 +9,24 @@ import { SiteHeader } from "./site-header";
 const clamp = (value: number) => Math.min(1, Math.max(0, value));
 const entryStarts = [0, 0.14, 0.28, 0.42];
 const entryDuration = 0.26;
+const bannerSlides = [
+  { desktop: "/banner.jpeg", desktopWidth: 1365, desktopHeight: 768, mobile: "/mob-banner-tall.png", mobileWidth: 841, mobileHeight: 1870 },
+  { desktop: "/hero-desktop-pink.png", desktopWidth: 1672, desktopHeight: 941, mobile: "/hero-mobile-pink.png", mobileWidth: 841, mobileHeight: 1870 },
+  { desktop: "/hero-desktop-white.png", desktopWidth: 1672, desktopHeight: 941, mobile: "/hero-mobile-white.png", mobileWidth: 841, mobileHeight: 1870 },
+].map((slide, index) => {
+  const common = {
+    alt: index === 0 ? "Vice City Vibes — Wear the heat of Leonida" : "",
+    sizes: "100vw",
+    fetchPriority: index === 0 ? "high" as const : undefined,
+  };
+  const {
+    props: { srcSet: desktopSrcSet },
+  } = getImageProps({ ...common, src: slide.desktop, width: slide.desktopWidth, height: slide.desktopHeight });
+  const {
+    props: { srcSet: mobileSrcSet, alt, ...mobileProps },
+  } = getImageProps({ ...common, src: slide.mobile, width: slide.mobileWidth, height: slide.mobileHeight });
+  return { desktopSrcSet, mobileSrcSet, alt, mobileProps };
+});
 
 type HeroSectionProps = {
   products: readonly Product[];
@@ -23,28 +41,13 @@ type HeroSectionProps = {
 export function HeroSection({ products, bagCount, bagButtonRef, onOpenProduct, onOpenBag, onOpenMenu, onOpenSearch }: HeroSectionProps) {
   const storyRef = useRef<HTMLDivElement>(null);
   const [progress, setProgress] = useState(0);
+  const [activeBanner, setActiveBanner] = useState(0);
 
-  const bannerImage = {
-    alt: "Vice City Vibes — Wear the heat of Leonida",
-    sizes: "100vw",
-    fetchPriority: "high" as const,
-  };
-  const {
-    props: { srcSet: desktopBannerSrcSet },
-  } = getImageProps({
-    ...bannerImage,
-    src: "/banner.jpeg",
-    width: 1365,
-    height: 768,
-  });
-  const {
-    props: { srcSet: mobileBannerSrcSet, alt: mobileBannerAlt, ...mobileBannerProps },
-  } = getImageProps({
-    ...bannerImage,
-    src: "/mob-banner-tall.png",
-    width: 841,
-    height: 1870,
-  });
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const timer = window.setInterval(() => setActiveBanner(current => (current + 1) % bannerSlides.length), 5000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const story = storyRef.current;
@@ -119,11 +122,13 @@ export function HeroSection({ products, bagCount, bagButtonRef, onOpenProduct, o
       <div ref={storyRef} className="campaign-hero-story">
         <div className="campaign-hero-sticky">
           <div className="campaign-hero-media">
-            <picture className="campaign-hero-picture">
-              <source media="(min-width: 601px)" srcSet={desktopBannerSrcSet} />
-              <source media="(max-width: 600px)" srcSet={mobileBannerSrcSet} />
-              <img {...mobileBannerProps} alt={mobileBannerAlt} className="campaign-hero-banner" />
-            </picture>
+            {bannerSlides.map((slide, index) => (
+              <picture key={slide.mobileProps.src} className={`campaign-hero-picture campaign-hero-slide ${index === 0 ? "is-layout" : ""} ${activeBanner === index ? "is-active" : ""}`}>
+                <source media="(min-width: 601px)" srcSet={slide.desktopSrcSet} />
+                <source media="(max-width: 600px)" srcSet={slide.mobileSrcSet} />
+                <img {...slide.mobileProps} alt={slide.alt} className="campaign-hero-banner" />
+              </picture>
+            ))}
             <h1 id="hero-title" className="sr-only">The Item Box Vice City Drop</h1>
             <div className="pointer-events-none absolute inset-0" role="group" aria-label="Featured products">
               <svg className="absolute pointer-events-none" width="0" height="0" aria-hidden="true" focusable="false">
