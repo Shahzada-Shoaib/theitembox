@@ -31,6 +31,7 @@ const eyebrowClass = "flex items-center gap-[11px] text-[8px] font-medium tracki
 export function ShopDialog({ dialogRef, panel, selected, query, bag, bagCount, subtotal, searchResults, onClose, onOpenProduct, onPanelChange, onQueryChange, onQuantityChange }: ShopDialogProps) {
   const [closing, setClosing] = useState(false);
   const [sizeChartPhase, setSizeChartPhase] = useState<"closed" | "open" | "closing">("closed");
+  const [collectionsOpen, setCollectionsOpen] = useState(false);
   const closeTimerRef = useRef<number>(0);
   const sizeChartDialogRef = useRef<HTMLDialogElement>(null);
   const label = selected?.name ?? (panel === "bag" ? "Your shopping bag" : panel === "search" ? "Search collection" : "Navigation menu");
@@ -91,7 +92,21 @@ export function ShopDialog({ dialogRef, panel, selected, query, bag, bagCount, s
           {panel === "menu" && (
             <nav className={`${panelClass} flex flex-col gap-1.5 [&_.brand]:mb-7`} aria-label="Mobile navigation">
               <Brand />
-              <a className="flex min-h-14 items-center justify-between border-b border-[#4c573b] py-[15px] text-left text-[clamp(21px,7vw,25px)]" href="#collection" onClick={onClose}>The collection <Icon name="arrow" /></a>
+              <button
+                type="button"
+                className="flex min-h-14 items-center justify-between border-b border-[#4c573b] py-[15px] text-left text-[clamp(21px,7vw,25px)]"
+                aria-expanded={collectionsOpen}
+                aria-controls="mobile-collections"
+                onClick={() => setCollectionsOpen(open => !open)}
+              >
+                Collections <Icon name="arrow" className={`transition-transform ${collectionsOpen ? "rotate-90" : ""}`} />
+              </button>
+              {collectionsOpen && (
+                <div id="mobile-collections" className="flex flex-col border-b border-[#4c573b] pl-4">
+                  <a className="py-3 text-[17px] text-[#c4cbb9]" href="#men" onClick={onClose}>Men</a>
+                  <a className="py-3 text-[17px] text-[#c4cbb9]" href="#women" onClick={onClose}>Women</a>
+                </div>
+              )}
               <button type="button" className="flex min-h-14 items-center justify-between border-b border-[#4c573b] py-[15px] text-left text-[clamp(21px,7vw,25px)]" onClick={() => onPanelChange("search")}>Search <Icon name="search" /></button>
             </nav>
           )}

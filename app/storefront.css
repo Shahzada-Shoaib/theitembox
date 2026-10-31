@@ -298,7 +298,7 @@ body { font-family: var(--font-geist-sans), Arial, sans-serif; }
 .campaign-hero-media { position: relative; height: clamp(430px,46vw,665px); overflow: hidden; background: #160d20; }
 .campaign-hero-sticky .campaign-hero-media { height: auto; min-height: 0; flex: none; }
 .campaign-hero-picture { display: block; width: 100%; }
-.campaign-hero-slide { position: absolute; inset: 0; opacity: 0; transform: scale(1.012); transition: opacity 2.4s cubic-bezier(.4,0,.2,1),transform 9s cubic-bezier(.22,1,.36,1); pointer-events: none; will-change: opacity,transform; }
+.campaign-hero-slide { position: absolute; inset: 0; opacity: 0; transform: scale(1.012); transition: opacity 2.4s cubic-bezier(.4,0,.2,1),transform 3s cubic-bezier(.22,1,.36,1); pointer-events: none; will-change: opacity,transform; }
 .campaign-hero-slide.is-layout { position: relative; }
 .campaign-hero-slide.is-active { opacity: 1; transform: scale(1); }
 .campaign-hero-banner { display: block; width: 100%; height: auto; object-fit: contain; }

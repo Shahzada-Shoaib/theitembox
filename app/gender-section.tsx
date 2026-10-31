@@ -15,7 +15,7 @@ export function GenderSection() {
   return (
     <section className="gender-section" aria-label="Shop by category">
       {categories.map(category => (
-        <a className="gender-panel" href="#collection" key={category.label} aria-label={`Shop ${category.label}`}>
+        <a id={category.label.toLowerCase()} className="gender-panel" href="#collection" key={category.label} aria-label={`Shop ${category.label}`}>
           <Image
             src={category.image}
             alt={`${category.label} collection`}
