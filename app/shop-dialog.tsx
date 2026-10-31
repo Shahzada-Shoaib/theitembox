@@ -125,11 +125,15 @@ type ProductDetailsProps = {
 function ProductDetails({ product, onOpenSizeChart }: ProductDetailsProps) {
   const [activeImage, setActiveImage] = useState(product.image);
   const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
   const [zoomOrigin, setZoomOrigin] = useState("50% 50%");
   const [pinching, setPinching] = useState(false);
   const imageRef = useRef<HTMLDivElement>(null);
   const zoomRef = useRef(1);
   const gestureRef = useRef({ distance: 0, zoom: 1 });
+  const panRef = useRef({ x: 0, y: 0 });
+  const panGestureRef = useRef({ active: false, x: 0, y: 0, panX: 0, panY: 0 });
+  const baseScale = activeImage === product.image ? 1.32 : 1;
 
   useEffect(() => {
     const image = imageRef.current;
@@ -140,8 +144,20 @@ function ProductDetails({ product, onOpenSizeChart }: ProductDetailsProps) {
       touches[1].clientY - touches[0].clientY,
     );
 
-    const startPinch = (event: TouchEvent) => {
-      if (event.touches.length !== 2 || !window.matchMedia("(max-width: 600px)").matches) return;
+    const startTouch = (event: TouchEvent) => {
+      if (!window.matchMedia("(max-width: 600px)").matches) return;
+      if (event.touches.length === 1 && zoomRef.current > 1) {
+        panGestureRef.current = {
+          active: true,
+          x: event.touches[0].clientX,
+          y: event.touches[0].clientY,
+          panX: panRef.current.x,
+          panY: panRef.current.y,
+        };
+        return;
+      }
+      if (event.touches.length !== 2) return;
+      panGestureRef.current.active = false;
       const bounds = image.getBoundingClientRect();
       const midpointX = (event.touches[0].clientX + event.touches[1].clientX) / 2;
       const midpointY = (event.touches[0].clientY + event.touches[1].clientY) / 2;
@@ -150,42 +166,71 @@ function ProductDetails({ product, onOpenSizeChart }: ProductDetailsProps) {
       setPinching(true);
     };
 
-    const movePinch = (event: TouchEvent) => {
-      if (event.touches.length !== 2 || !gestureRef.current.distance) return;
+    const moveTouch = (event: TouchEvent) => {
+      if (event.touches.length === 2 && gestureRef.current.distance) {
+        event.preventDefault();
+        const nextZoom = Math.min(2.5, Math.max(1, gestureRef.current.zoom * distanceBetween(event.touches) / gestureRef.current.distance));
+        zoomRef.current = nextZoom;
+        setZoom(nextZoom);
+        if (nextZoom === 1) {
+          panRef.current = { x: 0, y: 0 };
+          setPan({ x: 0, y: 0 });
+          setZoomOrigin("50% 50%");
+        }
+        return;
+      }
+      if (event.touches.length !== 1 || !panGestureRef.current.active || zoomRef.current <= 1) return;
       event.preventDefault();
-      const nextZoom = Math.min(2.5, Math.max(1, gestureRef.current.zoom * distanceBetween(event.touches) / gestureRef.current.distance));
-      zoomRef.current = nextZoom;
-      setZoom(nextZoom);
+      const bounds = image.getBoundingClientRect();
+      const maxX = bounds.width * (baseScale * zoomRef.current - 1) / 2;
+      const maxY = bounds.height * (baseScale * zoomRef.current - 1) / 2;
+      const nextPan = {
+        x: Math.max(-maxX, Math.min(maxX, panGestureRef.current.panX + event.touches[0].clientX - panGestureRef.current.x)),
+        y: Math.max(-maxY, Math.min(maxY, panGestureRef.current.panY + event.touches[0].clientY - panGestureRef.current.y)),
+      };
+      panRef.current = nextPan;
+      setPan(nextPan);
     };
 
-    const endPinch = (event: TouchEvent) => {
+    const endTouch = (event: TouchEvent) => {
       if (event.touches.length >= 2) return;
       gestureRef.current.distance = 0;
+      panGestureRef.current.active = false;
       setPinching(false);
+      if (event.touches.length === 1 && zoomRef.current > 1) {
+        panGestureRef.current = {
+          active: true,
+          x: event.touches[0].clientX,
+          y: event.touches[0].clientY,
+          panX: panRef.current.x,
+          panY: panRef.current.y,
+        };
+      }
     };
 
-    image.addEventListener("touchstart", startPinch, { passive: true });
-    image.addEventListener("touchmove", movePinch, { passive: false });
-    image.addEventListener("touchend", endPinch, { passive: true });
-    image.addEventListener("touchcancel", endPinch, { passive: true });
+    image.addEventListener("touchstart", startTouch, { passive: true });
+    image.addEventListener("touchmove", moveTouch, { passive: false });
+    image.addEventListener("touchend", endTouch, { passive: true });
+    image.addEventListener("touchcancel", endTouch, { passive: true });
     return () => {
-      image.removeEventListener("touchstart", startPinch);
-      image.removeEventListener("touchmove", movePinch);
-      image.removeEventListener("touchend", endPinch);
-      image.removeEventListener("touchcancel", endPinch);
+      image.removeEventListener("touchstart", startTouch);
+      image.removeEventListener("touchmove", moveTouch);
+      image.removeEventListener("touchend", endTouch);
+      image.removeEventListener("touchcancel", endTouch);
     };
-  }, []);
+  }, [baseScale]);
 
   function selectImage(image: string) {
     zoomRef.current = 1;
     gestureRef.current.distance = 0;
+    panRef.current = { x: 0, y: 0 };
+    panGestureRef.current.active = false;
     setZoom(1);
+    setPan({ x: 0, y: 0 });
     setZoomOrigin("50% 50%");
     setPinching(false);
     setActiveImage(image);
   }
-
-  const baseScale = activeImage === product.image ? 1.32 : 1;
 
   return (
     <div className="product-detail-surface w-full text-[#171914]">
@@ -197,7 +242,7 @@ function ProductDetails({ product, onOpenSizeChart }: ProductDetailsProps) {
             image={activeImage}
             sizes="(max-width: 600px) 92vw, 620px"
             className={`transition-transform ${pinching ? "duration-0" : "duration-300"}`}
-            style={{ transform: `scale(${baseScale * zoom})`, transformOrigin: zoomOrigin }}
+            style={{ transform: `translate3d(${pan.x}px, ${pan.y}px, 0) scale(${baseScale * zoom})`, transformOrigin: zoomOrigin, touchAction: zoom > 1 ? "none" : "pan-y" }}
           />
         </div>
         <div className="detail-thumbnails" role="group" aria-label="Choose product image">
