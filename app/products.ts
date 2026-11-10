@@ -2,7 +2,10 @@ export type Product = {
   id: string;
   slug: string;
   name: string;
-  category: "Apparel";
+  category: string;
+  categoryId?: string | null;
+  subcategory?: string | null;
+  subcategoryId?: string | null;
   collection: string;
   subtitle: string;
   description: string;
@@ -13,6 +16,14 @@ export type Product = {
   fit: string;
   tag: string;
   sizes: readonly string[];
+  active?: boolean;
+};
+
+export type StorefrontCatalog = {
+  products: readonly Product[];
+  sliderProducts: readonly Product[];
+  reelProducts: readonly Product[];
+  collectionProducts: readonly Product[];
 };
 
 // This is the single source of truth for every product shown on the site.
@@ -137,3 +148,10 @@ export const collectionProducts = pickProducts(["l-2", "l-3", "l-4", "l-5"]);
 
 export type BagItem = { id: Product["id"]; size: string; quantity: number };
 export const formatPrice = (price: number) => `Rs. ${price.toLocaleString("en-PK")}`;
+
+export const fallbackCatalog: StorefrontCatalog = {
+  products,
+  sliderProducts,
+  reelProducts,
+  collectionProducts,
+};

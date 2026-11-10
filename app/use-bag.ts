@@ -1,14 +1,14 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { products, type BagItem } from "./products";
+import type { BagItem, Product } from "./products";
 
 const EMPTY_BAG: BagItem[] = [];
 const listeners = new Set<() => void>();
 let cachedBag = EMPTY_BAG;
 let cachedValue: string | null | undefined;
 
-function getSnapshot(): BagItem[] {
+function getSnapshot(products: readonly Product[]): BagItem[] {
   try {
     const raw = localStorage.getItem("tib-bag");
     if (raw === cachedValue) return cachedBag;
@@ -28,8 +28,8 @@ function subscribe(listener: () => void) {
   return () => { listeners.delete(listener); window.removeEventListener("storage", onStorage); };
 }
 
-function updateBag(updater: (items: BagItem[]) => BagItem[]) {
-  cachedBag = updater(getSnapshot());
+function updateBag(products: readonly Product[], updater: (items: BagItem[]) => BagItem[]) {
+  cachedBag = updater(getSnapshot(products));
   try {
     const value = JSON.stringify(cachedBag);
     localStorage.setItem("tib-bag", value);
@@ -38,7 +38,12 @@ function updateBag(updater: (items: BagItem[]) => BagItem[]) {
   listeners.forEach(listener => listener());
 }
 
-export function useBag() {
-  const bag = useSyncExternalStore(subscribe, getSnapshot, () => EMPTY_BAG);
-  return [bag, updateBag] as const;
+export function useBag(products: readonly Product[]) {
+  const bag = useSyncExternalStore(
+    subscribe,
+    () => getSnapshot(products),
+    () => EMPTY_BAG
+  );
+  const setBag = (updater: (items: BagItem[]) => BagItem[]) => updateBag(products, updater);
+  return [bag, setBag] as const;
 }

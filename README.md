@@ -17,6 +17,22 @@ npm run build
 npm start
 ```
 
+## Supabase
+
+1. Copy `.env.example` to `.env.local` and add your Supabase project URL and **publishable** key from Project Settings → API Keys. Never use a `service_role` key in this app.
+2. In the Supabase SQL Editor, run [`supabase/schema.sql`](./supabase/schema.sql) to create the catalog, categories, subcategories, and homepage placement tables.
+3. Restart the dev server and open `http://localhost:3000/api/db-check`. A successful connection returns `{"status":"connected"}`.
+
+The storefront falls back to the sample catalog in `app/products.ts` if the database has not been migrated or is temporarily unavailable.
+
+## Admin panel
+
+Open `http://localhost:3000/admin` to manage products, categories, subcategories, and the three homepage product placements: moving slider, 3D rotation, and featured grid. Product changes invalidate the storefront automatically.
+
+The current admin panel intentionally has no authentication. The development policies in `supabase/schema.sql` allow anonymous catalog writes so the panel works with the publishable Supabase key. Do not expose this setup publicly; add admin authentication and replace the anonymous write policies before production.
+
+For image uploads, add the server-only Cloudinary values from `.env.example`. Admin uploads are stored under `mustafa-zahid/tib/products`. The API secret must never use a `NEXT_PUBLIC_` prefix.
+
 ## Experience
 
 - Full-viewport pinned film, scrubbed forwards and backwards with natural scrolling.

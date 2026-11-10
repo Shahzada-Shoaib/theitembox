@@ -4,12 +4,13 @@ import Image from "next/image";
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { Brand, Icon } from "./brand";
 import { ProductImage } from "./product-image";
-import { formatPrice, products, type BagItem, type Product } from "./products";
+import { formatPrice, type BagItem, type Product } from "./products";
 import { IconButton, PrimaryButton, primaryButtonClass } from "./ui";
 
 export type Panel = "search" | "bag" | "menu" | null;
 
 type ShopDialogProps = {
+  products: readonly Product[];
   dialogRef: RefObject<HTMLDialogElement | null>;
   panel: Panel;
   selected: Product | null;
@@ -28,7 +29,7 @@ type ShopDialogProps = {
 const panelClass = "px-10 pb-11 pt-14 max-[600px]:px-[22px] max-[600px]:pb-7 max-[600px]:pt-[62px]";
 const eyebrowClass = "flex items-center gap-[11px] text-[8px] font-medium tracking-[2.3px] text-[#b7ff00] max-[600px]:text-[7px] max-[600px]:tracking-[1.6px]";
 
-export function ShopDialog({ dialogRef, panel, selected, query, bag, bagCount, subtotal, searchResults, onClose, onOpenProduct, onPanelChange, onQueryChange, onQuantityChange }: ShopDialogProps) {
+export function ShopDialog({ products, dialogRef, panel, selected, query, bag, bagCount, subtotal, searchResults, onClose, onOpenProduct, onPanelChange, onQueryChange, onQuantityChange }: ShopDialogProps) {
   const [closing, setClosing] = useState(false);
   const [sizeChartPhase, setSizeChartPhase] = useState<"closed" | "open" | "closing">("closed");
   const [collectionsOpen, setCollectionsOpen] = useState(false);
@@ -88,7 +89,7 @@ export function ShopDialog({ dialogRef, panel, selected, query, bag, bagCount, s
           <IconButton label="Close dialog" icon="close" className={`absolute right-[15px] top-[15px] z-[5] rounded-full ${selected ? "border border-[#c9c9c1] bg-[#f7f7f3]/90 text-[#171914] shadow-[0_8px_24px_#34352f14] backdrop-blur-md hover:bg-white" : "border border-[#4c5240] bg-[#141710]"}`} onClick={requestClose} />
           {selected && <ProductDetails key={selected.id} product={selected} onOpenSizeChart={openSizeChart} />}
           {panel === "search" && <SearchPanel query={query} results={searchResults} onQueryChange={onQueryChange} onOpenProduct={onOpenProduct} />}
-          {panel === "bag" && <BagPanel bag={bag} bagCount={bagCount} subtotal={subtotal} onClose={requestClose} onQuantityChange={onQuantityChange} />}
+          {panel === "bag" && <BagPanel products={products} bag={bag} bagCount={bagCount} subtotal={subtotal} onClose={requestClose} onQuantityChange={onQuantityChange} />}
           {panel === "menu" && (
             <nav className={`${panelClass} flex flex-col gap-1.5 [&_.brand]:mb-7`} aria-label="Mobile navigation">
               <Brand />
@@ -320,7 +321,7 @@ function SearchPanel({ query, results, onQueryChange, onOpenProduct }: { query: 
   );
 }
 
-function BagPanel({ bag, bagCount, subtotal, onClose, onQuantityChange }: { bag: BagItem[]; bagCount: number; subtotal: number; onClose: () => void; onQuantityChange: (id: Product["id"], size: string, delta: number) => void }) {
+function BagPanel({ products, bag, bagCount, subtotal, onClose, onQuantityChange }: { products: readonly Product[]; bag: BagItem[]; bagCount: number; subtotal: number; onClose: () => void; onQuantityChange: (id: Product["id"], size: string, delta: number) => void }) {
   return (
     <div className={panelClass}>
       <span className={eyebrowClass}>EXCELLENT TASTE.</span>
