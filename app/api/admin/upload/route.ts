@@ -1,5 +1,6 @@
 import { v2 as cloudinary } from "cloudinary";
 import { Readable } from "node:stream";
+import { isAdminAuthenticated } from "@/lib/admin-auth";
 
 export const runtime = "nodejs";
 
@@ -17,6 +18,9 @@ function configureCloudinary() {
 }
 
 export async function POST(request: Request) {
+  if (!(await isAdminAuthenticated())) {
+    return Response.json({ error: "Unauthorized." }, { status: 401 });
+  }
   if (!configureCloudinary()) {
     return Response.json(
       { error: "Add the server-only Cloudinary credentials to .env before uploading." },

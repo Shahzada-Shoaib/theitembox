@@ -2,7 +2,7 @@
 
 import { getImageProps } from "next/image";
 import { useEffect, useState, type RefObject } from "react";
-import type { Product } from "./products";
+import type { CatalogCategory, CatalogSubcategory } from "./products";
 import { SiteHeader } from "./site-header";
 
 const bannerSlides = [
@@ -14,6 +14,7 @@ const bannerSlides = [
     alt: index === 0 ? "Vice City Vibes — Wear the heat of Leonida" : "",
     sizes: "100vw",
     fetchPriority: index === 0 ? "high" as const : undefined,
+    loading: index === 0 ? "eager" as const : "lazy" as const,
   };
   const {
     props: { srcSet: desktopSrcSet },
@@ -25,27 +26,27 @@ const bannerSlides = [
 });
 
 type HeroSectionProps = {
-  products: readonly Product[];
+  categories: readonly CatalogCategory[];
+  subcategories: readonly CatalogSubcategory[];
   bagCount: number;
   bagButtonRef: RefObject<HTMLButtonElement | null>;
-  onOpenProduct: (product: Product) => void;
   onOpenBag: () => void;
   onOpenMenu: () => void;
   onOpenSearch: () => void;
 };
 
-export function HeroSection({ products, bagCount, bagButtonRef, onOpenBag, onOpenMenu, onOpenSearch }: HeroSectionProps) {
+export function HeroSection({ categories, subcategories, bagCount, bagButtonRef, onOpenBag, onOpenMenu, onOpenSearch }: HeroSectionProps) {
   const [activeBanner, setActiveBanner] = useState(0);
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const timer = window.setInterval(() => setActiveBanner(current => (current + 1) % bannerSlides.length), 8000);
+    const timer = window.setInterval(() => setActiveBanner(current => (current + 1) % bannerSlides.length), 3000);
     return () => window.clearInterval(timer);
   }, []);
 
   return (
     <section id="top" aria-labelledby="hero-title" className="campaign-hero">
-      <SiteHeader bagCount={bagCount} bagButtonRef={bagButtonRef} productCount={products.length} onOpenBag={onOpenBag} onOpenMenu={onOpenMenu} onOpenSearch={onOpenSearch} />
+      <SiteHeader categories={categories} subcategories={subcategories} bagCount={bagCount} bagButtonRef={bagButtonRef} onOpenBag={onOpenBag} onOpenMenu={onOpenMenu} onOpenSearch={onOpenSearch} />
       <div className="campaign-hero-story">
         <div className="campaign-hero-sticky">
           <div className="campaign-hero-media">
@@ -56,7 +57,7 @@ export function HeroSection({ products, bagCount, bagButtonRef, onOpenBag, onOpe
                 <img {...slide.mobileProps} alt={slide.alt} className="campaign-hero-banner" />
               </picture>
             ))}
-            <h1 id="hero-title" className="sr-only">The Item Box Vice City Drop</h1>
+            <h1 id="hero-title" className="sr-only">Graphic T-Shirts in Pakistan — The Item Box Vice City Drop</h1>
           </div>
         </div>
       </div>

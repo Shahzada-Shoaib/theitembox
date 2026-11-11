@@ -27,7 +27,11 @@ create table if not exists public.products (
   description text not null,
   price integer not null check (price >= 0),
   image text not null,
+  image_alt text not null default '',
   gallery text[] not null default '{}',
+  gallery_alts text[] not null default '{}',
+  meta_title text not null default '',
+  meta_description text not null default '',
   color text not null,
   fit text not null,
   tag text not null,
@@ -37,6 +41,10 @@ create table if not exists public.products (
 alter table public.products add column if not exists category_id text references public.categories(id) on delete set null;
 alter table public.products add column if not exists subcategory_id text references public.subcategories(id) on delete set null;
 alter table public.products add column if not exists active boolean not null default true;
+alter table public.products add column if not exists image_alt text not null default '';
+alter table public.products add column if not exists gallery_alts text[] not null default '{}';
+alter table public.products add column if not exists meta_title text not null default '';
+alter table public.products add column if not exists meta_description text not null default '';
 alter table public.products add column if not exists created_at timestamptz not null default now();
 alter table public.products add column if not exists updated_at timestamptz not null default now();
 
@@ -71,6 +79,12 @@ on conflict (id) do nothing;
 update public.products
 set category_id = coalesce(category_id, 'apparel'), subcategory_id = coalesce(subcategory_id, 'apparel--graphic-tees')
 where id in ('l-1', 'l-2', 'l-3', 'l-4', 'l-5');
+
+update public.products
+set
+  image_alt = case when image_alt = '' then subtitle else image_alt end,
+  meta_title = case when meta_title = '' then name || ' | The Item Box' else meta_title end,
+  meta_description = case when meta_description = '' then description else meta_description end;
 
 insert into public.homepage_product_placements (product_id, section, sort_order)
 values

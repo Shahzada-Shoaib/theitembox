@@ -18,7 +18,11 @@ type ProductRow = {
   description: string;
   price: number;
   image: string;
+  image_alt: string;
   gallery: string[];
+  gallery_alts: string[];
+  meta_title: string;
+  meta_description: string;
   color: string;
   fit: string;
   tag: string;
@@ -33,8 +37,9 @@ type CatalogData = {
   products: ProductRow[];
   placements: Placement[];
 };
-type ProductDraft = Omit<ProductRow, "gallery" | "sizes"> & {
-  galleryText: string;
+type GalleryItem = { url: string; alt: string };
+type ProductDraft = Omit<ProductRow, "gallery" | "gallery_alts" | "sizes"> & {
+  galleryItems: GalleryItem[];
   sizesText: string;
 };
 
@@ -44,6 +49,10 @@ const SECTION_META: Record<Section, { label: string; hint: string; index: string
   reel: { label: "3D rotation", hint: "Products orbiting inside the pink stage.", index: "02" },
   collection: { label: "Featured grid", hint: "The product cards below the category split.", index: "03" },
 };
+
+function isPreviewableImage(value: string) {
+  return value.startsWith("/") || value.startsWith("https://res.cloudinary.com/");
+}
 
 function emptyProduct(categoryId = ""): ProductDraft {
   return {
@@ -58,7 +67,10 @@ function emptyProduct(categoryId = ""): ProductDraft {
     description: "",
     price: 0,
     image: "",
-    galleryText: "",
+    image_alt: "",
+    galleryItems: [],
+    meta_title: "",
+    meta_description: "",
     color: "",
     fit: "Relaxed",
     tag: "NEW DROP",
@@ -138,7 +150,12 @@ export default function AdminDashboard() {
     if (product) {
       setDraft({
         ...product,
-        galleryText: product.gallery.join("\n"),
+        image_alt: product.image_alt ?? product.subtitle,
+        meta_title: product.meta_title ?? "",
+        meta_description: product.meta_description ?? "",
+        galleryItems: product.gallery
+          .map((url, index) => ({ url, alt: product.gallery_alts?.[index] ?? "" }))
+          .filter(item => item.url !== product.image),
         sizesText: product.sizes.join(", "),
       });
       setDraftSections(placementSections(product.id));
@@ -151,9 +168,11 @@ export default function AdminDashboard() {
   async function saveProduct(event: FormEvent) {
     event.preventDefault();
     if (!draft) return;
+    const galleryItems = draft.galleryItems.filter(item => item.url.trim());
     const product = {
       ...draft,
-      gallery: draft.galleryText.split(/\r?\n/).map(value => value.trim()).filter(Boolean),
+      gallery: [draft.image.trim(), ...galleryItems.map(item => item.url.trim())].filter(Boolean),
+      gallery_alts: [draft.image_alt.trim(), ...galleryItems.map(item => item.alt.trim())],
       sizes: draft.sizesText.split(",").map(value => value.trim()).filter(Boolean),
     };
     const saved = await runAction(
@@ -163,7 +182,7 @@ export default function AdminDashboard() {
     if (saved) setDraft(null);
   }
 
-  async function uploadImage(file?: File) {
+  async function uploadImage(file?: File, target: "main" | number = "main") {
     if (!file || !draft) return;
     setUploading(true);
     setError("");
@@ -173,12 +192,15 @@ export default function AdminDashboard() {
       const response = await fetch("/api/admin/upload", { method: "POST", body });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Image upload failed.");
-      setDraft(current => current ? {
-        ...current,
-        image: result.url,
-        galleryText: current.galleryText ? `${result.url}\n${current.galleryText}` : result.url,
-      } : current);
-      setNotice("Image uploaded to Cloudinary.");
+      setDraft(current => {
+        if (!current) return current;
+        if (target === "main") return { ...current, image: result.url };
+        return {
+          ...current,
+          galleryItems: current.galleryItems.map((item, index) => index === target ? { ...item, url: result.url } : item),
+        };
+      });
+      setNotice(target === "main" ? "Main image uploaded." : "Gallery image uploaded.");
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : "Image upload failed.");
     } finally {
@@ -207,8 +229,6 @@ export default function AdminDashboard() {
     void updateSection(section, ids);
   }
 
-  const activeCount = data.products.filter(product => product.active).length;
-
   return (
     <main className="admin-shell">
       <aside className="admin-sidebar">
@@ -235,7 +255,7 @@ export default function AdminDashboard() {
       <section className="admin-workspace">
         <header className="admin-topbar">
           <div><span>THE ITEM BOX / CONTROL DESK</span><strong>{new Date().toLocaleDateString("en-PK", { day: "2-digit", month: "short", year: "numeric" })}</strong></div>
-          <p><b>No authentication</b> — keep this panel private until admin login is added.</p>
+          <form action="/api/admin/logout" method="post"><button type="submit">Sign out</button></form>
         </header>
 
         {error && <div className="admin-alert" role="alert"><span>!</span><p>{error}</p><button type="button" onClick={() => setError("")}>Dismiss</button></div>}
@@ -246,13 +266,7 @@ export default function AdminDashboard() {
             {tab === "products" && (
               <div className="admin-view">
                 <div className="admin-heading">
-                  <div><span>CATALOG / {String(data.products.length).padStart(2, "0")}</span><h1>Products</h1><p>Everything available across your storefront.</p></div>
                   <button className="admin-primary" type="button" onClick={() => openProduct()}>+ Add product</button>
-                </div>
-                <div className="admin-metrics">
-                  <article><span>Total products</span><strong>{data.products.length}</strong><small>Across {data.categories.length} categories</small></article>
-                  <article><span>Published</span><strong>{activeCount}</strong><small>{data.products.length - activeCount} hidden from store</small></article>
-                  <article><span>Homepage slots</span><strong>{data.placements.length}</strong><small>Across three placements</small></article>
                 </div>
                 <div className="admin-table-card">
                   <div className="admin-table-tools">
@@ -287,7 +301,6 @@ export default function AdminDashboard() {
 
             {tab === "homepage" && (
               <div className="admin-view">
-                <div className="admin-heading"><div><span>MERCHANDISING / HOME</span><h1>Homepage</h1><p>Choose products and control their exact display order.</p></div><Link className="admin-secondary" href="/" target="_blank">Preview store ↗</Link></div>
                 <div className="admin-section-grid">
                   {(Object.keys(SECTION_META) as Section[]).map(section => {
                     const ids = sectionIds(section);
@@ -342,12 +355,37 @@ export default function AdminDashboard() {
               </section>
               <section className="admin-form-section">
                 <h3>Imagery</h3>
-                <div className="admin-upload-box">
-                  {draft.image ? <div><Image src={draft.image} alt="Product preview" fill sizes="130px" /></div> : <span>IMAGE</span>}
-                  <label>{uploading ? "Uploading…" : "Upload to Cloudinary"}<input type="file" accept="image/*" disabled={uploading} onChange={event => void uploadImage(event.target.files?.[0])} /></label>
+                <div className="admin-image-block-head"><div><strong>Main image</strong><small>Used on product cards and search previews.</small></div></div>
+                <div className="admin-image-editor is-main">
+                  <div className="admin-image-preview">
+                    {isPreviewableImage(draft.image) ? <Image src={draft.image} alt="" fill sizes="110px" /> : <span>MAIN</span>}
+                  </div>
+                  <div className="admin-image-fields">
+                    <Field label="Image URL"><input required value={draft.image} onChange={event => setDraft({ ...draft, image: event.target.value })} placeholder="Upload an image or paste its URL" /></Field>
+                    <Field label="Alt text"><input required value={draft.image_alt} onChange={event => setDraft({ ...draft, image_alt: event.target.value })} placeholder="e.g. Pink graphic T-shirt, front view" /></Field>
+                    <label className="admin-upload-action">{uploading ? "Uploading…" : draft.image ? "Replace image" : "Upload image"}<input type="file" accept="image/*" disabled={uploading} onChange={event => void uploadImage(event.target.files?.[0])} /></label>
+                  </div>
                 </div>
-                <Field label="Main image URL"><input required value={draft.image} onChange={event => setDraft({ ...draft, image: event.target.value })} placeholder="https://… or /Products/…" /></Field>
-                <Field label="Gallery URLs — one per line"><textarea rows={4} value={draft.galleryText} onChange={event => setDraft({ ...draft, galleryText: event.target.value })} /></Field>
+
+                <div className="admin-image-block-head gallery"><div><strong>Gallery images</strong><small>Add optional back, detail or lifestyle views.</small></div><button type="button" onClick={() => setDraft({ ...draft, galleryItems: [...draft.galleryItems, { url: "", alt: "" }] })}>+ Add image</button></div>
+                <div className="admin-gallery-list">
+                  {draft.galleryItems.map((item, index) => <div className="admin-image-editor" key={index}>
+                    <div className="admin-image-preview">
+                      {isPreviewableImage(item.url) ? <Image src={item.url} alt="" fill sizes="90px" /> : <span>{String(index + 1).padStart(2, "0")}</span>}
+                    </div>
+                    <div className="admin-image-fields">
+                      <Field label="Image URL"><input required value={item.url} onChange={event => setDraft({ ...draft, galleryItems: draft.galleryItems.map((entry, itemIndex) => itemIndex === index ? { ...entry, url: event.target.value } : entry) })} placeholder="Upload an image or paste its URL" /></Field>
+                      <Field label="Alt text"><input required value={item.alt} onChange={event => setDraft({ ...draft, galleryItems: draft.galleryItems.map((entry, itemIndex) => itemIndex === index ? { ...entry, alt: event.target.value } : entry) })} placeholder="Describe this exact view" /></Field>
+                      <div className="admin-gallery-actions"><label className="admin-upload-action">{uploading ? "Uploading…" : item.url ? "Replace" : "Upload"}<input type="file" accept="image/*" disabled={uploading} onChange={event => void uploadImage(event.target.files?.[0], index)} /></label><button type="button" onClick={() => setDraft({ ...draft, galleryItems: draft.galleryItems.filter((_, itemIndex) => itemIndex !== index) })}>Remove</button></div>
+                    </div>
+                  </div>)}
+                  {!draft.galleryItems.length && <p className="admin-gallery-empty">No gallery images yet. Add one only when you need another product view.</p>}
+                </div>
+              </section>
+              <section className="admin-form-section">
+                <h3>Search preview</h3>
+                <Field label="Meta title"><input maxLength={70} value={draft.meta_title} onChange={event => setDraft({ ...draft, meta_title: event.target.value })} placeholder={`${draft.name || "Product name"} | The Item Box`} /></Field>
+                <Field label="Meta description"><textarea maxLength={170} rows={3} value={draft.meta_description} onChange={event => setDraft({ ...draft, meta_description: event.target.value })} placeholder="Short description shown in search results" /></Field>
               </section>
               <section className="admin-form-section">
                 <h3>Details & visibility</h3>
@@ -377,7 +415,6 @@ function StructureView({ data, busy, runAction }: { data: CatalogData; busy: boo
   const [subcategoryName, setSubcategoryName] = useState("");
   const [categoryId, setCategoryId] = useState(data.categories[0]?.id ?? "");
   return <div className="admin-view">
-    <div className="admin-heading"><div><span>CATALOG / STRUCTURE</span><h1>Categories</h1><p>Keep the hierarchy compact and easy to browse.</p></div></div>
     <div className="admin-structure-grid">
       <section><header><span>01</span><div><h2>Categories</h2><p>Top-level product groups.</p></div></header><form onSubmit={async event => { event.preventDefault(); if (await runAction({ action: "save-category", name: categoryName }, "Category created.")) setCategoryName(""); }}><input value={categoryName} onChange={event => setCategoryName(event.target.value)} placeholder="e.g. Apparel" required /><button disabled={busy}>Add</button></form><div>{data.categories.map(category => <article key={category.id}><strong>{category.name}</strong><span>{data.subcategories.filter(item => item.category_id === category.id).length} subcategories</span><button type="button" onClick={() => { if (window.confirm(`Delete ${category.name}?`)) void runAction({ action: "delete-category", id: category.id }, "Category deleted."); }}>Delete</button></article>)}</div></section>
       <section><header><span>02</span><div><h2>Subcategories</h2><p>Optional groups within a category.</p></div></header><form onSubmit={async event => { event.preventDefault(); if (await runAction({ action: "save-subcategory", name: subcategoryName, categoryId }, "Subcategory created.")) setSubcategoryName(""); }}><select value={categoryId} onChange={event => setCategoryId(event.target.value)} required><option value="">Category</option>{data.categories.map(category => <option key={category.id} value={category.id}>{category.name}</option>)}</select><input value={subcategoryName} onChange={event => setSubcategoryName(event.target.value)} placeholder="e.g. Graphic Tees" required /><button disabled={busy}>Add</button></form><div>{data.subcategories.map(item => <article key={item.id}><strong>{item.name}</strong><span>{data.categories.find(category => category.id === item.category_id)?.name}</span><button type="button" onClick={() => { if (window.confirm(`Delete ${item.name}?`)) void runAction({ action: "delete-subcategory", id: item.id }, "Subcategory deleted."); }}>Delete</button></article>)}</div></section>

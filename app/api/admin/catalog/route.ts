@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache";
 import { createSupabaseClient, isSupabaseConfigured } from "@/lib/supabase";
+import { isAdminAuthenticated } from "@/lib/admin-auth";
 
 type Section = "slider" | "reel" | "collection";
 
@@ -23,20 +24,25 @@ function fail(message: string, status = 400) {
 }
 
 export async function GET() {
+  if (!(await isAdminAuthenticated())) return fail("Unauthorized.", 401);
   try {
     const supabase = getClient();
-    const [categories, subcategories, products, placements] = await Promise.all([
+    const [categories, subcategories, placements] = await Promise.all([
       supabase.from("categories").select("id,name,sort_order").order("sort_order"),
       supabase.from("subcategories").select("id,category_id,name,sort_order").order("sort_order"),
-      supabase
-        .from("products")
-        .select("id,slug,name,category,category_id,subcategory_id,collection,subtitle,description,price,image,gallery,color,fit,tag,sizes,active,created_at,updated_at")
-        .order("created_at", { ascending: false }),
       supabase
         .from("homepage_product_placements")
         .select("product_id,section,sort_order")
         .order("sort_order"),
     ]);
+    const productQuery = (fields: string) => supabase
+      .from("products")
+      .select(fields)
+      .order("created_at", { ascending: false });
+    let products = await productQuery("id,slug,name,category,category_id,subcategory_id,collection,subtitle,description,price,image,image_alt,gallery,gallery_alts,meta_title,meta_description,color,fit,tag,sizes,active,created_at,updated_at");
+    if (products.error) {
+      products = await productQuery("id,slug,name,category,category_id,subcategory_id,collection,subtitle,description,price,image,gallery,color,fit,tag,sizes,active,created_at,updated_at");
+    }
 
     const error = categories.error ?? subcategories.error ?? products.error ?? placements.error;
     if (error) return fail(`${error.message} Run supabase/schema.sql in the Supabase SQL Editor.`, 502);
@@ -44,7 +50,13 @@ export async function GET() {
     return Response.json({
       categories: categories.data,
       subcategories: subcategories.data,
-      products: products.data,
+      products: ((products.data ?? []) as unknown as Array<Record<string, unknown>>).map(product => ({
+        ...product,
+        image_alt: String(product.image_alt ?? product.subtitle ?? product.name ?? ""),
+        gallery_alts: Array.isArray(product.gallery_alts) ? product.gallery_alts : [],
+        meta_title: String(product.meta_title ?? ""),
+        meta_description: String(product.meta_description ?? ""),
+      })),
       placements: placements.data,
     });
   } catch (error) {
@@ -53,6 +65,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  if (!(await isAdminAuthenticated())) return fail("Unauthorized.", 401);
   try {
     const body = await request.json();
     const action = String(body.action ?? "");
@@ -97,7 +110,17 @@ export async function POST(request: Request) {
       const gallery = Array.isArray(product.gallery)
         ? product.gallery.map(String).map((value: string) => value.trim()).filter(Boolean)
         : [];
-      if (!gallery.includes(image)) gallery.unshift(image);
+      const imageAlt = String(product.image_alt || product.subtitle || name).trim();
+      const rawGalleryAlts = Array.isArray(product.gallery_alts)
+        ? product.gallery_alts.map(String).map((value: string) => value.trim())
+        : [];
+      if (!gallery.includes(image)) {
+        gallery.unshift(image);
+        rawGalleryAlts.unshift(imageAlt);
+      }
+      const galleryAlts = gallery.map((url: string, index: number) =>
+        rawGalleryAlts[index] || (url === image ? imageAlt : `${name} product image ${index + 1}`)
+      );
 
       const row = {
         id,
@@ -111,7 +134,11 @@ export async function POST(request: Request) {
         description: String(product.description || "").trim(),
         price: Math.max(0, Number(product.price) || 0),
         image,
+        image_alt: imageAlt,
         gallery,
+        gallery_alts: galleryAlts,
+        meta_title: String(product.meta_title || `${name} | The Item Box`).trim(),
+        meta_description: String(product.meta_description || product.description || product.subtitle || name).trim(),
         color: String(product.color || "Not specified").trim(),
         fit: String(product.fit || "Regular").trim(),
         tag: String(product.tag || "NEW").trim().toUpperCase(),
@@ -184,6 +211,9 @@ export async function POST(request: Request) {
 
     revalidatePath("/");
     revalidatePath("/admin");
+    revalidatePath("/collections/[[...path]]", "page");
+    revalidatePath("/products/[slug]", "page");
+    revalidatePath("/sitemap.xml");
     return Response.json({ ok: true });
   } catch (error) {
     return fail(error instanceof Error ? error.message : "Catalog update failed.", 500);

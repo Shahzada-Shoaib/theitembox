@@ -1,16 +1,20 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { Brand, Icon } from "./brand";
 import { ProductImage } from "./product-image";
-import { formatPrice, type BagItem, type Product } from "./products";
+import { formatPrice, type BagItem, type CatalogCategory, type CatalogSubcategory, type Product } from "./products";
 import { IconButton, PrimaryButton, primaryButtonClass } from "./ui";
+import { categoryPath, subcategoryPath } from "@/lib/catalog-routes";
 
 export type Panel = "search" | "bag" | "menu" | null;
 
 type ShopDialogProps = {
   products: readonly Product[];
+  categories: readonly CatalogCategory[];
+  subcategories: readonly CatalogSubcategory[];
   dialogRef: RefObject<HTMLDialogElement | null>;
   panel: Panel;
   selected: Product | null;
@@ -29,7 +33,7 @@ type ShopDialogProps = {
 const panelClass = "px-10 pb-11 pt-14 max-[600px]:px-[22px] max-[600px]:pb-7 max-[600px]:pt-[62px]";
 const eyebrowClass = "flex items-center gap-[11px] text-[8px] font-medium tracking-[2.3px] text-[#b7ff00] max-[600px]:text-[7px] max-[600px]:tracking-[1.6px]";
 
-export function ShopDialog({ products, dialogRef, panel, selected, query, bag, bagCount, subtotal, searchResults, onClose, onOpenProduct, onPanelChange, onQueryChange, onQuantityChange }: ShopDialogProps) {
+export function ShopDialog({ products, categories, subcategories, dialogRef, panel, selected, query, bag, bagCount, subtotal, searchResults, onClose, onOpenProduct, onPanelChange, onQueryChange, onQuantityChange }: ShopDialogProps) {
   const [closing, setClosing] = useState(false);
   const [sizeChartPhase, setSizeChartPhase] = useState<"closed" | "open" | "closing">("closed");
   const [collectionsOpen, setCollectionsOpen] = useState(false);
@@ -104,8 +108,10 @@ export function ShopDialog({ products, dialogRef, panel, selected, query, bag, b
               </button>
               {collectionsOpen && (
                 <div id="mobile-collections" className="flex flex-col border-b border-[#4c573b] pl-4">
-                  <a className="py-3 text-[17px] text-[#c4cbb9]" href="#men" onClick={onClose}>Men</a>
-                  <a className="py-3 text-[17px] text-[#c4cbb9]" href="#women" onClick={onClose}>Women</a>
+                  {categories.map(category => <div className="border-b border-[#4c573b]/50 py-2 last:border-0" key={category.id}>
+                    <Link className="block py-2 text-[17px] text-[#f6f6ed]" href={categoryPath(category)} onClick={onClose}>{category.name}</Link>
+                    {subcategories.filter(item => item.categoryId === category.id).map(subcategory => <Link className="block py-2 pl-3 text-[14px] text-[#aeb8a4]" href={subcategoryPath(category, subcategory)} onClick={onClose} key={subcategory.id}>{subcategory.name}</Link>)}
+                  </div>)}
                 </div>
               )}
               <button type="button" className="flex min-h-14 items-center justify-between border-b border-[#4c573b] py-[15px] text-left text-[clamp(21px,7vw,25px)]" onClick={() => onPanelChange("search")}>Search <Icon name="search" /></button>
@@ -306,7 +312,7 @@ function SearchPanel({ query, results, onQueryChange, onOpenProduct }: { query: 
       <h2 className="mb-8 mt-5 text-[40px] font-semibold leading-[1.08] tracking-[-1.7px] max-[600px]:mb-7 max-[600px]:text-[32px]">Find your thing.</h2>
       <div className="flex items-center gap-3.5 border-b border-[#6a7853] py-4 focus-within:border-[#b7ff00]">
         <Icon name="search" />
-        <input autoFocus className="min-w-0 w-full border-0 bg-transparent text-xs text-[#f5f5ef] outline-none placeholder:text-[#79866b] max-[600px]:text-base" type="search" placeholder="Headphones, frames, your next favourite…" value={query} onChange={event => onQueryChange(event.target.value)} aria-label="Search products" />
+        <input autoFocus className="min-w-0 w-full border-0 bg-transparent text-xs text-[#f5f5ef] outline-none placeholder:text-[#79866b] max-[600px]:text-base" type="search" placeholder="Graphic tees, colours, collections…" value={query} onChange={event => onQueryChange(event.target.value)} aria-label="Search products" />
       </div>
       <div className="mt-4">
         {results.length ? results.map(product => (

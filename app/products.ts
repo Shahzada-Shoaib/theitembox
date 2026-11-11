@@ -11,7 +11,11 @@ export type Product = {
   description: string;
   price: number;
   image: string;
+  imageAlt?: string;
   gallery: readonly string[];
+  galleryAlts?: readonly string[];
+  metaTitle?: string;
+  metaDescription?: string;
   color: string;
   fit: string;
   tag: string;
@@ -19,7 +23,12 @@ export type Product = {
   active?: boolean;
 };
 
+export type CatalogCategory = { id: string; name: string; sortOrder: number };
+export type CatalogSubcategory = { id: string; categoryId: string; name: string; sortOrder: number };
+
 export type StorefrontCatalog = {
+  categories: readonly CatalogCategory[];
+  subcategories: readonly CatalogSubcategory[];
   products: readonly Product[];
   sliderProducts: readonly Product[];
   reelProducts: readonly Product[];
@@ -149,8 +158,16 @@ export const collectionProducts = pickProducts(["l-2", "l-3", "l-4", "l-5"]);
 export type BagItem = { id: Product["id"]; size: string; quantity: number };
 export const formatPrice = (price: number) => `Rs. ${price.toLocaleString("en-PK")}`;
 
+const fallbackProducts: readonly Product[] = products.map(product => ({
+  ...product,
+  categoryId: "apparel",
+  subcategoryId: "apparel--graphic-tees",
+}));
+
 export const fallbackCatalog: StorefrontCatalog = {
-  products,
+  categories: [{ id: "apparel", name: "Apparel", sortOrder: 0 }],
+  subcategories: [{ id: "apparel--graphic-tees", categoryId: "apparel", name: "Graphic Tees", sortOrder: 0 }],
+  products: fallbackProducts,
   sliderProducts,
   reelProducts,
   collectionProducts,

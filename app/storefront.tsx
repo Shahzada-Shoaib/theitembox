@@ -7,7 +7,6 @@ import { CollectionSection } from "./collection-section";
 import { GenderSection } from "./gender-section";
 import { HeroSection } from "./hero-section";
 import { LookbookSection } from "./lookbook-section";
-import { PageLoader } from "./page-loader";
 import type { Product, StorefrontCatalog } from "./products";
 import { ProductReel } from "./product-reel";
 import { ShopDialog, type Panel } from "./shop-dialog";
@@ -18,7 +17,7 @@ import { useInertialScroll } from "./use-inertial-scroll";
 import { useMotionPreference } from "./use-motion-preference";
 
 export default function Storefront({ catalog }: { catalog: StorefrontCatalog }) {
-  const { products, sliderProducts, reelProducts, collectionProducts } = catalog;
+  const { categories, subcategories, products, sliderProducts, reelProducts, collectionProducts } = catalog;
   const lookbookProducts = products.slice(0, 3);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const headerBagRef = useRef<HTMLButtonElement>(null);
@@ -142,21 +141,20 @@ export default function Storefront({ catalog }: { catalog: StorefrontCatalog }) 
   const searchResults = products.filter(product => `${product.name} ${product.category} ${product.subtitle}`.toLowerCase().includes(query.toLowerCase()));
 
   return <>
-    <PageLoader />
     <a className="fixed left-5 -top-[70px] z-[100] bg-[#b7ff00] px-[25px] py-[15px] text-[#0b0b0b] focus:top-3" href="#collection">Skip to collection</a>
     <main>
-      <HeroSection products={products} bagCount={bagCount} bagButtonRef={headerBagRef} onOpenProduct={openProduct} onOpenBag={() => openPanel("bag")} onOpenMenu={() => openPanel("menu")} onOpenSearch={() => { setQuery(""); openPanel("search"); }} />
+      <HeroSection categories={categories} subcategories={subcategories} bagCount={bagCount} bagButtonRef={headerBagRef} onOpenBag={() => openPanel("bag")} onOpenMenu={() => openPanel("menu")} onOpenSearch={() => { setQuery(""); openPanel("search"); }} />
       <TeeSlider products={sliderProducts} onOpenProduct={openProduct} />
       <ProductReel products={reelProducts} onOpenProduct={openProduct} />
       <GenderSection />
-      <CollectionSection products={collectionProducts} onOpenProduct={openProduct} onQuickAdd={addToBag} />
+      <CollectionSection products={collectionProducts} onQuickAdd={addToBag} />
       <LookbookSection products={lookbookProducts} onOpenProduct={openProduct} />
       <SiteFooter />
     </main>
     <button ref={floatingBagRef} type="button" className={`fixed right-[6.5%] top-[max(28px,env(safe-area-inset-top))] z-50 flex min-h-[54px] items-center gap-[11px] rounded-[50px] border border-white/15 bg-[#141710ed] px-[18px] py-3 text-xs text-[#f6f6f2] shadow-[0_8px_28px_#00000024] backdrop-blur-2xl transition-[opacity,visibility] duration-200 hover:border-[#b7ff0060] max-[900px]:right-[6%] max-[600px]:top-[max(16px,env(safe-area-inset-top))] max-[600px]:min-h-12 max-[600px]:gap-[7px] max-[600px]:px-3.5 max-[600px]:py-2.5 max-[600px]:text-[11px] ${showFloatingBag ? "visible pointer-events-auto opacity-100" : "invisible pointer-events-none opacity-0"}`} aria-label={`Open bag, ${bagCount} items`} aria-hidden={!showFloatingBag} tabIndex={showFloatingBag ? 0 : -1} onClick={() => openPanel("bag")}>
       <span className="bag-flight-target grid size-[30px] shrink-0 place-items-center text-[#b7ff00] max-[600px]:size-[28px] [&>svg]:size-[19px] [&>svg]:stroke-[2] [&>svg]:drop-shadow-[0_0_5px_#b7ff0066]"><Icon name="bag" /></span><span>Bag</span><span className="grid size-[26px] place-items-center rounded-full border border-[#b7ff0045] text-[10px] text-[#b7ff00] max-[600px]:size-[22px] max-[600px]:text-[9px]">{bagCount.toString().padStart(2, "0")}</span>
     </button>
-    <ShopDialog products={products} dialogRef={dialogRef} panel={panel} selected={selected} query={query} bag={bag} bagCount={bagCount} subtotal={subtotal} searchResults={[...searchResults]} onClose={closeDialog} onOpenProduct={openProduct} onPanelChange={openPanel} onQueryChange={setQuery} onQuantityChange={changeQuantity} />
+    <ShopDialog products={products} categories={categories} subcategories={subcategories} dialogRef={dialogRef} panel={panel} selected={selected} query={query} bag={bag} bagCount={bagCount} subtotal={subtotal} searchResults={[...searchResults]} onClose={closeDialog} onOpenProduct={openProduct} onPanelChange={openPanel} onQueryChange={setQuery} onQuantityChange={changeQuantity} />
     <div className={`fixed bottom-[25px] left-1/2 z-[100] flex w-max max-w-[calc(100vw-30px)] -translate-x-1/2 items-center gap-3 bg-[#d0ff58] px-[22px] py-[17px] text-xs text-[#19230a] shadow-[0_8px_30px_#0005] transition duration-200 max-[600px]:px-[18px] max-[600px]:py-3.5 max-[600px]:text-[10px] ${toast ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-5 opacity-0"}`} role="status"><Icon name="check" />{toast}</div>
   </>;
 }

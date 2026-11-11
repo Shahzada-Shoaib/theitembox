@@ -4,11 +4,10 @@ import type { Product } from "./products";
 
 type CollectionSectionProps = {
   products: readonly Product[];
-  onOpenProduct: (product: Product) => void;
   onQuickAdd: (product: Product, source: HTMLElement | null) => void;
 };
 
-export function CollectionSection({ products, onOpenProduct, onQuickAdd }: CollectionSectionProps) {
+export function CollectionSection({ products, onQuickAdd }: CollectionSectionProps) {
   return (
     <section className="featured-section" id="collection" aria-labelledby="collection-title">
       <header className="store-section-header">
@@ -17,7 +16,7 @@ export function CollectionSection({ products, onOpenProduct, onQuickAdd }: Colle
       </header>
       <div id="collection-grid" className="featured-grid">
         {products.map(product => (
-          <ProductCard key={product.id} product={product} onOpen={() => onOpenProduct(product)} onQuickAdd={source => onQuickAdd(product, source)} />
+          <ProductCard key={product.id} product={product} onQuickAdd={source => onQuickAdd(product, source)} />
         ))}
       </div>
     </section>

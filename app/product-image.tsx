@@ -17,7 +17,7 @@ export function ProductImage({ product, image, alt, sizes = "(max-width: 600px) 
   return (
     <Image
       src={image ?? product.image}
-      alt={alt ?? product.subtitle}
+      alt={alt ?? product.imageAlt ?? product.subtitle}
       fill
       unoptimized={unoptimized}
       sizes={sizes}
