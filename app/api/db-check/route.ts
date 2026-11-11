@@ -6,7 +6,7 @@ export async function GET() {
       {
         status: "not_configured",
         message:
-          "Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY.",
+          "Set SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY.",
       },
       { status: 503 }
     );
