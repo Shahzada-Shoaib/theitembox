@@ -3,6 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { formatPrice } from "@/app/products";
+import { orderStatuses, type Order, type OrderStatus } from "@/app/orders";
 
 type Category = { id: string; name: string; sort_order: number };
 type Subcategory = { id: string; category_id: string; name: string; sort_order: number };
@@ -81,7 +83,7 @@ function emptyProduct(categoryId = ""): ProductDraft {
 
 export default function AdminDashboard() {
   const [data, setData] = useState<CatalogData>(EMPTY_DATA);
-  const [tab, setTab] = useState<"products" | "homepage" | "structure">("products");
+  const [tab, setTab] = useState<"products" | "orders" | "homepage" | "structure">("products");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -90,6 +92,8 @@ export default function AdminDashboard() {
   const [draft, setDraft] = useState<ProductDraft | null>(null);
   const [draftSections, setDraftSections] = useState<Section[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
 
   const loadCatalog = useCallback(async () => {
     try {
@@ -109,6 +113,27 @@ export default function AdminDashboard() {
     const timer = window.setTimeout(() => void loadCatalog(), 0);
     return () => window.clearTimeout(timer);
   }, [loadCatalog]);
+
+  const loadOrders = useCallback(async () => {
+    setOrdersLoading(true);
+    setError("");
+    try {
+      const response = await fetch("/api/admin/orders", { cache: "no-store" });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Orders could not be loaded.");
+      setOrders(result.orders ?? []);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Orders could not be loaded.");
+    } finally {
+      setOrdersLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (tab !== "orders") return;
+    const timer = window.setTimeout(() => void loadOrders(), 0);
+    return () => window.clearTimeout(timer);
+  }, [tab, loadOrders]);
   useEffect(() => {
     if (!notice) return;
     const timer = window.setTimeout(() => setNotice(""), 2800);
@@ -229,6 +254,21 @@ export default function AdminDashboard() {
     void updateSection(section, ids);
   }
 
+  async function updateOrderStatus(id: string, status: OrderStatus) {
+    setBusy(true);
+    try {
+      const response = await fetch("/api/admin/orders", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, status }) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Order could not be updated.");
+      setOrders(current => current.map(order => order.id === id ? { ...order, status } : order));
+      setNotice("Order status updated.");
+    } catch (updateError) {
+      setError(updateError instanceof Error ? updateError.message : "Order could not be updated.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <main className="admin-shell">
       <aside className="admin-sidebar">
@@ -238,6 +278,7 @@ export default function AdminDashboard() {
         <nav aria-label="Admin sections">
           {([
             ["products", "Products", "P"],
+            ["orders", "Orders", "O"],
             ["homepage", "Homepage", "H"],
             ["structure", "Categories", "C"],
           ] as const).map(([value, label, initial]) => (
@@ -336,6 +377,7 @@ export default function AdminDashboard() {
             )}
 
             {tab === "structure" && <StructureView data={data} busy={busy} runAction={runAction} />}
+            {tab === "orders" && <OrdersView orders={orders} loading={ordersLoading} busy={busy} onStatusChange={updateOrderStatus} />}
           </>
         )}
       </section>
@@ -419,6 +461,24 @@ function StructureView({ data, busy, runAction }: { data: CatalogData; busy: boo
       <section><header><span>01</span><div><h2>Categories</h2><p>Top-level product groups.</p></div></header><form onSubmit={async event => { event.preventDefault(); if (await runAction({ action: "save-category", name: categoryName }, "Category created.")) setCategoryName(""); }}><input value={categoryName} onChange={event => setCategoryName(event.target.value)} placeholder="e.g. Apparel" required /><button disabled={busy}>Add</button></form><div>{data.categories.map(category => <article key={category.id}><strong>{category.name}</strong><span>{data.subcategories.filter(item => item.category_id === category.id).length} subcategories</span><button type="button" onClick={() => { if (window.confirm(`Delete ${category.name}?`)) void runAction({ action: "delete-category", id: category.id }, "Category deleted."); }}>Delete</button></article>)}</div></section>
       <section><header><span>02</span><div><h2>Subcategories</h2><p>Optional groups within a category.</p></div></header><form onSubmit={async event => { event.preventDefault(); if (await runAction({ action: "save-subcategory", name: subcategoryName, categoryId }, "Subcategory created.")) setSubcategoryName(""); }}><select value={categoryId} onChange={event => setCategoryId(event.target.value)} required><option value="">Category</option>{data.categories.map(category => <option key={category.id} value={category.id}>{category.name}</option>)}</select><input value={subcategoryName} onChange={event => setSubcategoryName(event.target.value)} placeholder="e.g. Graphic Tees" required /><button disabled={busy}>Add</button></form><div>{data.subcategories.map(item => <article key={item.id}><strong>{item.name}</strong><span>{data.categories.find(category => category.id === item.category_id)?.name}</span><button type="button" onClick={() => { if (window.confirm(`Delete ${item.name}?`)) void runAction({ action: "delete-subcategory", id: item.id }, "Subcategory deleted."); }}>Delete</button></article>)}</div></section>
     </div>
+  </div>;
+}
+
+function OrdersView({ orders, loading, busy, onStatusChange }: { orders: Order[]; loading: boolean; busy: boolean; onStatusChange: (id: string, status: OrderStatus) => Promise<void> }) {
+  return <div className="admin-view">
+    <div className="admin-orders-head"><div><span>ORDERS</span><h1>Customer orders</h1></div><b>{orders.length}</b></div>
+    {loading ? <AdminLoading /> : <div className="admin-orders-scroll"><div className="admin-orders-table">
+      <div className="admin-orders-columns" aria-hidden="true"><span>Order</span><span>Customer</span><span>Items</span><span>Delivery</span><span>Total</span><span>Status</span></div>
+      {orders.map(order => <article className="admin-order-row" key={order.id}>
+        <div><strong>{order.order_number}</strong><small>{new Date(order.created_at).toLocaleString("en-PK", { dateStyle: "medium", timeStyle: "short" })}</small></div>
+        <div><strong>{order.customer_name}</strong><a href={`tel:${order.phone}`}>{order.phone}</a></div>
+        <div className="admin-order-products">{order.order_items.map(item => <span key={item.id}>{item.quantity}× {item.product_name} <small>{item.size}</small></span>)}</div>
+        <div><strong>{order.city}</strong><small title={`${order.address}${order.notes ? ` — ${order.notes}` : ""}`}>{order.address}</small></div>
+        <strong className="admin-order-total">{formatPrice(order.subtotal)}</strong>
+        <select disabled={busy} value={order.status} onChange={event => void onStatusChange(order.id, event.target.value as OrderStatus)}>{orderStatuses.map(status => <option value={status} key={status}>{status[0].toUpperCase() + status.slice(1)}</option>)}</select>
+      </article>)}
+      {!orders.length && <div className="admin-empty"><strong>No orders yet.</strong><span>New checkout orders will appear here.</span></div>}
+    </div></div>}
   </div>;
 }
 

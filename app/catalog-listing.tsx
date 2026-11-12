@@ -51,8 +51,8 @@ export function CatalogListing({ catalog, products }: CatalogListingProps) {
     setPanel(next);
   }
 
-  function addToBag(product: Product) {
-    const size = product.sizes.includes("M") ? "M" : product.sizes[0] || "One size";
+  function addToBag(product: Product, selectedSize?: string) {
+    const size = selectedSize || (product.sizes.includes("M") ? "M" : product.sizes[0] || "One size");
     setBag(current => {
       const match = current.find(item => item.id === product.id && item.size === size);
       return match
@@ -116,6 +116,7 @@ export function CatalogListing({ catalog, products }: CatalogListingProps) {
       onPanelChange={openPanel}
       onQueryChange={setQuery}
       onQuantityChange={changeQuantity}
+      onAddToBag={(product, size) => { addToBag(product, size); closeDialog(); }}
     />
     <div className={`catalog-toast ${toast ? "is-visible" : ""}`} role="status">{toast}</div>
   </>;

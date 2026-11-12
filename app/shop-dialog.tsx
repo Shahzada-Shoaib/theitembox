@@ -6,7 +6,7 @@ import { useEffect, useRef, useState, type RefObject } from "react";
 import { Brand, Icon } from "./brand";
 import { ProductImage } from "./product-image";
 import { formatPrice, type BagItem, type CatalogCategory, type CatalogSubcategory, type Product } from "./products";
-import { IconButton, PrimaryButton, primaryButtonClass } from "./ui";
+import { IconButton, primaryButtonClass } from "./ui";
 import { categoryPath, subcategoryPath } from "@/lib/catalog-routes";
 
 export type Panel = "search" | "bag" | "menu" | null;
@@ -28,12 +28,13 @@ type ShopDialogProps = {
   onPanelChange: (panel: Panel) => void;
   onQueryChange: (query: string) => void;
   onQuantityChange: (id: Product["id"], size: string, delta: number) => void;
+  onAddToBag: (product: Product, size: string) => void;
 };
 
 const panelClass = "px-10 pb-11 pt-14 max-[600px]:px-[22px] max-[600px]:pb-7 max-[600px]:pt-[62px]";
 const eyebrowClass = "flex items-center gap-[11px] text-[8px] font-medium tracking-[2.3px] text-[#b7ff00] max-[600px]:text-[7px] max-[600px]:tracking-[1.6px]";
 
-export function ShopDialog({ products, categories, subcategories, dialogRef, panel, selected, query, bag, bagCount, subtotal, searchResults, onClose, onOpenProduct, onPanelChange, onQueryChange, onQuantityChange }: ShopDialogProps) {
+export function ShopDialog({ products, categories, subcategories, dialogRef, panel, selected, query, bag, bagCount, subtotal, searchResults, onClose, onOpenProduct, onPanelChange, onQueryChange, onQuantityChange, onAddToBag }: ShopDialogProps) {
   const [closing, setClosing] = useState(false);
   const [sizeChartPhase, setSizeChartPhase] = useState<"closed" | "open" | "closing">("closed");
   const [collectionsOpen, setCollectionsOpen] = useState(false);
@@ -91,7 +92,7 @@ export function ShopDialog({ products, categories, subcategories, dialogRef, pan
       >
         <div className="relative">
           <IconButton label="Close dialog" icon="close" className={`absolute right-[15px] top-[15px] z-[5] rounded-full ${selected ? "border border-[#c9c9c1] bg-[#f7f7f3]/90 text-[#171914] shadow-[0_8px_24px_#34352f14] backdrop-blur-md hover:bg-white" : "border border-[#4c5240] bg-[#141710]"}`} onClick={requestClose} />
-          {selected && <ProductDetails key={selected.id} product={selected} onOpenSizeChart={openSizeChart} />}
+          {selected && <ProductDetails key={selected.id} product={selected} onOpenSizeChart={openSizeChart} onAddToBag={onAddToBag} />}
           {panel === "search" && <SearchPanel query={query} results={searchResults} onQueryChange={onQueryChange} onOpenProduct={onOpenProduct} />}
           {panel === "bag" && <BagPanel products={products} bag={bag} bagCount={bagCount} subtotal={subtotal} onClose={requestClose} onQuantityChange={onQuantityChange} />}
           {panel === "menu" && (
@@ -142,14 +143,16 @@ export function ShopDialog({ products, categories, subcategories, dialogRef, pan
 type ProductDetailsProps = {
   product: Product;
   onOpenSizeChart: () => void;
+  onAddToBag: (product: Product, size: string) => void;
 };
 
-function ProductDetails({ product, onOpenSizeChart }: ProductDetailsProps) {
+function ProductDetails({ product, onOpenSizeChart, onAddToBag }: ProductDetailsProps) {
   const [activeImage, setActiveImage] = useState(product.image);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [zoomOrigin, setZoomOrigin] = useState("50% 50%");
   const [pinching, setPinching] = useState(false);
+  const [selectedSize, setSelectedSize] = useState(product.sizes.includes("M") ? "M" : product.sizes[0] || "One size");
   const imageRef = useRef<HTMLDivElement>(null);
   const zoomRef = useRef(1);
   const gestureRef = useRef({ distance: 0, zoom: 1 });
@@ -298,8 +301,9 @@ function ProductDetails({ product, onOpenSizeChart }: ProductDetailsProps) {
             <span>AVAILABLE SIZES</span>
             <button type="button" onClick={onOpenSizeChart}>SIZE CHART</button>
           </span>
-          <div>{product.sizes.map(size => <span key={size}>{size}</span>)}</div>
+          <div>{product.sizes.map(size => <button type="button" className={selectedSize === size ? "is-active" : ""} aria-pressed={selectedSize === size} onClick={() => setSelectedSize(size)} key={size}>{size}</button>)}</div>
         </div>
+        <button className="detail-add" type="button" onClick={() => onAddToBag(product, selectedSize)}>Add to bag</button>
       </aside>
     </div>
   );
@@ -344,8 +348,7 @@ function BagPanel({ products, bag, bagCount, subtotal, onClose, onQuantityChange
           );
         })}</div>
         <div className="my-[25px] flex justify-between text-base"><span>Subtotal</span><strong className="font-medium">{formatPrice(subtotal)}</strong></div>
-        <p className="mb-5 bg-[#202817] p-3.5 text-[11px] leading-[1.7] text-[#909f80]">This is a collection preview. Your bag is saved on this device; checkout isn&apos;t available yet.</p>
-        <PrimaryButton className="w-full" onClick={onClose}>Keep discovering <Icon name="arrow" /></PrimaryButton>
+        <Link className={`${primaryButtonClass} w-full`} href="/checkout" onClick={onClose}>Checkout <Icon name="arrow" /></Link>
       </> : (
         <div className="pb-[15px] pt-[30px] text-center [&>svg]:mx-auto [&>svg]:mb-[22px] [&>svg]:size-[38px] [&>svg]:text-[#b7ff00]">
           <Icon name="bag" /><h3 className="text-lg font-medium">A little room for something good.</h3><p className="mb-[25px] mt-[13px] text-xs text-[#94a085]">Your next favourite is waiting in the collection.</p><a href="#collection" onClick={onClose} className={primaryButtonClass}>Explore the collection <Icon name="arrow" /></a>

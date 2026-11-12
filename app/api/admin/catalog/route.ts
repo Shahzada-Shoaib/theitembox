@@ -1,5 +1,5 @@
 import { revalidatePath } from "next/cache";
-import { createSupabaseClient, isSupabaseConfigured } from "@/lib/supabase";
+import { createSupabaseAdminClient } from "@/lib/supabase";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 
 type Section = "slider" | "reel" | "collection";
@@ -13,10 +13,7 @@ function slugify(value: string) {
 }
 
 function getClient() {
-  if (!isSupabaseConfigured()) {
-    throw new Error("Supabase is not configured.");
-  }
-  return createSupabaseClient();
+  return createSupabaseAdminClient();
 }
 
 function fail(message: string, status = 400) {
@@ -211,6 +208,7 @@ export async function POST(request: Request) {
 
     revalidatePath("/");
     revalidatePath("/admin");
+    revalidatePath("/checkout");
     revalidatePath("/collections/[[...path]]", "page");
     revalidatePath("/products/[slug]", "page");
     revalidatePath("/sitemap.xml");

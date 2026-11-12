@@ -139,7 +139,8 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 .detail-sizes .detail-sizes-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .detail-sizes-heading button { padding: 0 0 3px; border: 0; border-bottom: 1px solid currentColor; background: transparent; color: #31352c; font-size: 7px; font-weight: 700; letter-spacing: 1.5px; }
 .detail-sizes > div { display: flex; gap: 9px; }
-.detail-sizes > div span { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid #c9cbc1; border-radius: 50%; font-size: 9px; }
+.detail-sizes > div button { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid #c9cbc1; border-radius: 50%; background:transparent; font-size: 9px; cursor:pointer; }.detail-sizes > div button.is-active { border-color:#11130e; background:#11130e; color:#b7ff00; }
+.detail-add { width:100%; min-height:48px; margin-top:20px; border:0; background:#11130e; color:#b7ff00; font-size:10px; font-weight:750; cursor:pointer; }
 .size-chart-dialog { position: fixed; width: min(680px,calc(100vw - 32px)); height: min(860px,calc(100svh - 32px)); max-width: none; max-height: none; margin: auto; overflow: hidden; padding: 0; border: 0; background: transparent; }
 .size-chart-dialog::backdrop { background: #000c; backdrop-filter: blur(12px); animation: size-chart-native-backdrop-in .65s ease both; }
 .size-chart-dialog.is-closing::backdrop { animation: size-chart-native-backdrop-out 1.15s ease both; }

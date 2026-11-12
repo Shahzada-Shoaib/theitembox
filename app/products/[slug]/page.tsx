@@ -6,6 +6,7 @@ import { Brand } from "@/app/brand";
 import { formatPrice } from "@/app/products";
 import { getProductBySlug, getStorefrontCatalog } from "@/lib/catalog";
 import { absoluteUrl } from "@/lib/site";
+import { ProductPurchase } from "./product-purchase";
 import "./product.css";
 
 type ProductPageProps = { params: Promise<{ slug: string }> };
@@ -122,8 +123,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             <div><dt>Colour</dt><dd>{product.color}</dd></div>
             <div><dt>Fit</dt><dd>{product.fit}</dd></div>
           </dl>
-          {product.sizes.length > 0 && <div className="seo-product-sizes"><span>Available sizes</span><p>{product.sizes.join(" · ")}</p></div>}
-          <Link className="seo-product-cta" href="/#collection">Shop the collection</Link>
+          <ProductPurchase product={product} products={products} />
         </div>
       </article>
 
